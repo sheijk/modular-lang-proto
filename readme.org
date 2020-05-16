@@ -1,0 +1,25 @@
+
+* Goal
+
+The goal of this project is to prototype extensible languages in OCaml to find a
+good way to represent extensible ASTs which can form the base of a type safe and
+convenient macro system.
+
+Step one is to experiment with OCamls variant and GADT types and module system
+to find the things which do not work well. Step two will be to design a language
+for extensible ASTs.
+
+* Languages
+
+The following small languages will be implemented and combined:
+
+** calc-int
+Arithmetic expressions with integers
+** calc-float
+Arithmetic expressions with floats
+** calc
+calc-int + calc-float and conversions
+** algo-int
+Extending calc-int with conditional evaluation, loops, and booleans
+** algo-generic
+Extending a given language with conditional evaluation and loops
