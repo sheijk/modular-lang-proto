@@ -1,4 +1,7 @@
 
+#+STARTUP: indent
+#+STARTUP: showeverything
+
 * Goal
 
 The goal of this project is to prototype extensible languages in OCaml to find a
