@@ -1,4 +1,5 @@
 
 (executable
+ (preprocess (pps ppx_deriving.show))
  (name calc_int_app))
 
