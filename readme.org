@@ -26,3 +26,25 @@ calc-int + calc-float and conversions
 Extending calc-int with conditional evaluation, loops, and booleans
 ** algo-generic
 Extending a given language with conditional evaluation and loops
+
+* Building
+
+** Initial one time setup
+
+#+begin_src sh
+opam switch create . ocaml-base-compiler.4.10.0
+opam install dune merlin
+#+end_src
+
+** Build the project
+
+#+begin_src sh
+dune build source/calc-int/calc_int_app.exe
+#+end_src
+
+** Running demo app
+
+#+begin_src sh
+dune exec source/calc-int/calc_int_app.exe
+#+end_src
+
