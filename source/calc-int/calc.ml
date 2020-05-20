@@ -12,6 +12,8 @@ struct
   type t =
     | Int_expr of Calc_int.Expr.t
     | Float_expr of Calc_float.Expr.t
+    | To_float of t
+    (* | To_int of t *)
     | Error of string
   [@@deriving show]
 
@@ -20,9 +22,16 @@ struct
     | Float_value of float
   [@@deriving show]
 
-  let eval = function
+  let rec eval = function
     | Int_expr expr -> Int_value (Calc_int.Expr.eval expr)
     | Float_expr expr -> Float_value (Calc_float.Expr.eval expr)
+    | To_float iexpr ->
+      begin match eval iexpr with
+        | Int_value i ->
+          Float_value (Float.of_int i)
+        | Float_value _ as fv ->
+          fv
+      end
     | Error str -> failwith str
 end
 
@@ -37,8 +46,14 @@ struct
       Expr.Int_expr (Calc_int.Expr.BinOp (li, Calc_int.Expr.Add, ri))
     | Expr.Float_expr lf, Expr.Float_expr rf ->
       Expr.Float_expr (Calc_float.Expr.BinOp (lf, Calc_float.Expr.Add, rf))
+    (* This will not work because we can't embed the Calc_int expr inside a Calc_float one.
+     * Also we now need to handle another case here instead of only checking the type.
+     * | Expr.Float_expr lf, Expr.To_float ri ->
+     *   Expr.Float_expr (Calc_float.Expr.BinOp (lf, Calc_float.Expr.Add, ri)) *)
     | _ ->
       Expr.Error "type error"
+
+  let to_f e = Expr.To_float e
 end
 
 let run expr =
@@ -52,4 +67,6 @@ let demo() =
   run @@ Build.(i 10 + i 5);
   run @@ Build.(f 3. + f 5.);
   run @@ Build.(f 3. + i 5);
+  run @@ Build.(to_f @@ i 8 + i 2);
+  run @@ Build.(f 8. + to_f (i 2));
   ()
