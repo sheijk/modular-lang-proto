@@ -78,18 +78,37 @@ struct
   let to_f e = Expr.To_float e
 end
 
-let run expr =
+let run expect expr =
   Printf.printf "Running\n  %s\n  => %s\n"
     (Expr.show expr)
-    (try Expr.eval expr |> Expr.show_value with
-     | Failure str -> Printf.sprintf "*exception %s*" str)
+    (match (expect, Expr.eval expr) with
+     | Expr.Int_value expect, (Expr.Int_value got as gotv) ->
+       let value_str = Expr.show_value gotv in
+       if expect = got then
+         value_str
+       else
+         Printf.sprintf "*error: expected %d but got %s" expect value_str
+     | Expr.Float_value expect, (Expr.Float_value got as gotv) ->
+       let value_str = Expr.show_value gotv in
+       if expect -. got < epsilon_float then
+         value_str
+       else
+         Printf.sprintf "*error: expected %f but got %s" expect value_str
+     | Expr.Float_value _, Expr.Int_value _
+     | Expr.Int_value _, Expr.Float_value _ ->
+       "*error: can't mix float and int expressions"
+     | exception Failure str ->
+       Printf.sprintf "*exception %s*" str)
 
 let demo() =
+  let i i = Expr.Int_value i in
+  let f f = Expr.Float_value f in
   (* run @@ Build.(i 10 + to_f (i 2 * i 3)); *)
-  run @@ Build.(i 10 + i 5);
-  run @@ Build.(f 3. + f 5.);
-  run @@ Build.(to_f @@ i 8 + i 2);
-  run @@ Build.(f 8. + to_f (i 2));
-  run @@ Build.(to_f (i 16) + f 8.);
-  run @@ Build.(f 3. + i 5);
+  run (i 15) Build.(i 10 + i 5);
+  run (f 8.) Build.(f 3. + f 5.);
+  run (f 10.) Build.(to_f @@ i 8 + i 2);
+  run (f 10.) Build.(f 8. + to_f (i 2));
+  run (f 24.) Build.(to_f (i 16) + f 8.);
+  print_endline "ERROR CASES:";
+  run (f 8.) Build.(f 3. + i 5);
   ()
