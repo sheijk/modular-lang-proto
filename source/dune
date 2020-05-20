@@ -1,5 +1,19 @@
 
+(library
+ (name Calc_languages)
+ (preprocess (pps ppx_deriving.show))
+ (modules Calc_int Calc_float Calc)
+ (wrapped false))
+
 (executable
  (preprocess (pps ppx_deriving.show))
- (name calc_demo))
+ (name calc_demo)
+ (modules Calc_demo)
+ (libraries Calc_languages))
+
+(executable
+ (preprocess (pps ppx_deriving.show))
+ (name algo_demo)
+ (modules Algo_int Algo_demo)
+ (libraries Calc_languages))
 
