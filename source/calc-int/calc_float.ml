@@ -35,5 +35,4 @@ let run expr =
 
 let demo() =
   run @@ Build.(c 10. + c 2. * c 3.);
-  print_endline "Running calc-int demo"
-
+  ()
