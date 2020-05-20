@@ -6,11 +6,12 @@ end
 
 module Expr =
 struct
-  type t =
-    | Int_expr of t Calc_int.Expr.t
-    | Float_expr of t Calc_float.Expr.t
-    | To_float of t
-    | To_int of t
+  type 'a t =
+    | Int_expr of 'a t Calc_int.Expr.t
+    | Float_expr of 'a t Calc_float.Expr.t
+    | To_float of 'a t
+    | To_int of 'a t
+    | Other of 'a
     | Error of string
   [@@deriving show]
 
@@ -26,35 +27,40 @@ struct
     | Float_expr _
     | To_float _ ->
       Type.Float
+    | Other _ ->
+      Type.Error "invalid embedded type"
     | Error msg ->
       Type.Error msg
 
-  let rec eval = function
-    | Int_expr expr -> Int_value (Calc_int.Expr.eval eval_int expr)
-    | Float_expr expr -> Float_value (Calc_float.Expr.eval eval_float expr)
+  let rec eval eval_other = function
+    | Int_expr expr -> Int_value (Calc_int.Expr.eval (eval_int eval_other) expr)
+    | Float_expr expr -> Float_value (Calc_float.Expr.eval (eval_float eval_other) expr)
     | To_float iexpr ->
-      begin match eval iexpr with
+      begin match eval eval_other iexpr with
         | Int_value i ->
           Float_value (Float.of_int i)
         | Float_value _ as fv ->
           fv
       end
     | To_int fexpr ->
-      begin match eval fexpr with
+      begin match eval eval_other fexpr with
         | Float_value f ->
           Int_value (Float.to_int f)
         | Int_value _ as iv ->
           iv
       end
-    | Error str -> failwith str
+    | Other expr ->
+      eval_other expr
+    | Error str ->
+      failwith str
 
-  and eval_float expr =
-    match eval expr with
+  and eval_float eval_other expr =
+    match eval eval_other expr with
     | Float_value f -> f
     | _ -> failwith "expected float"
 
-  and eval_int expr =
-    match eval expr with
+  and eval_int eval_other expr =
+    match eval eval_other expr with
     | Int_value i -> i
     | _ -> failwith "expected int"
 end
@@ -85,10 +91,13 @@ struct
   let to_i e = Expr.To_int e
 end
 
+let show_void _ () = ()
+let eval_void () = failwith "Cannot eval ()"
+
 let run expect expr =
   Printf.printf "Running\n  %s\n  => %s\n"
-    (Expr.show expr)
-    (match (expect, Expr.eval expr) with
+    (Expr.show show_void expr)
+    (match (expect, Expr.eval eval_void expr) with
      | Expr.Int_value expect, (Expr.Int_value got as gotv) ->
        let value_str = Expr.show_value gotv in
        if expect = got then

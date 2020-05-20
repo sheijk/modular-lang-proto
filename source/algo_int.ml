@@ -1,6 +1,4 @@
 
-module Type = Calc.Type
-
 module Expr =
 struct
   type t =
