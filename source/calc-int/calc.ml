@@ -1,4 +1,9 @@
 
+module Type =
+struct
+  type t = Float | Int | Error of string [@@deriving show]
+end
+
 module Expr =
 struct
   type binop =
@@ -21,6 +26,14 @@ struct
     | Int_value of int
     | Float_value of float
   [@@deriving show]
+
+  let type_of = function
+    | Int_expr _ -> Type.Int
+    | Float_expr _
+    | To_float _ ->
+      Type.Float
+    | Error msg ->
+      Type.Error msg
 
   let rec eval = function
     | Int_expr expr -> Int_value (Calc_int.Expr.eval expr)
@@ -45,14 +58,20 @@ struct
   let i i = Expr.Int_expr (Calc_int.Expr.Literal i)
   let f f = Expr.Float_expr (Calc_float.Expr.Literal f)
 
+  let as_float = function
+    | Expr.Float_expr fe -> fe
+    | expr -> Calc_float.Expr.Other expr
+
+  let as_int = function
+    | Expr.Int_expr ie -> ie
+    | _ -> failwith "can't embed into Calc_int"
+
   let ( + ) l r =
-    match (l, r) with
-    | Expr.Int_expr li, Expr.Int_expr ri ->
-      Expr.Int_expr (Calc_int.Expr.BinOp (li, Calc_int.Expr.Add, ri))
-    | Expr.Float_expr lf, Expr.Float_expr rf ->
-      Expr.Float_expr (Calc_float.Expr.BinOp (lf, Calc_float.Expr.Add, rf))
-    | Expr.Float_expr lf, (Expr.To_float _ as rf) ->
-      Expr.Float_expr (Calc_float.Expr.BinOp (lf, Calc_float.Expr.Add, Calc_float.Expr.Other rf))
+    match (Expr.type_of l, Expr.type_of r) with
+    | Type.Int, Type.Int ->
+      Expr.Int_expr (Calc_int.Expr.BinOp (as_int l, Calc_int.Expr.Add, as_int r))
+    | Type.Float, Type.Float ->
+      Expr.Float_expr (Calc_float.Expr.BinOp (as_float l, Calc_float.Expr.Add, as_float r))
     | _ ->
       Expr.Error "type error"
 
@@ -71,5 +90,6 @@ let demo() =
   run @@ Build.(f 3. + f 5.);
   run @@ Build.(to_f @@ i 8 + i 2);
   run @@ Build.(f 8. + to_f (i 2));
+  run @@ Build.(to_f (i 16) + f 8.);
   run @@ Build.(f 3. + i 5);
   ()
