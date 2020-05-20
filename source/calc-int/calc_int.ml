@@ -10,14 +10,16 @@ struct
     | Mul -> ( * )
     | Div -> ( / )
 
-  type t =
+  type 'a t =
     | Literal of int
-    | BinOp of t * binop * t
+    | BinOp of 'a t * binop * 'a t
+    | Other of 'a
   [@@deriving show]
 
-  let rec eval = function
+  let rec eval eval_other = function
     | Literal num -> num
-    | BinOp (lhs, op, rhs) -> (to_function op) (eval lhs) (eval rhs)
+    | BinOp (lhs, op, rhs) -> (to_function op) (eval eval_other lhs) (eval eval_other rhs)
+    | Other e -> eval_other e
 end
 
 module Build =
@@ -30,8 +32,11 @@ struct
   let ( / ) l r = Expr.BinOp (l, Expr.Div, r)
 end
 
+let show_void _ () = ()
+let eval_void () = failwith "Cannot eval ()"
+
 let run expr =
-  Printf.printf "Running\n  %s\n  => %d\n" (Expr.show expr) (Expr.eval expr)
+  Printf.printf "Running\n  %s\n  => %d\n" (Expr.show show_void expr) (Expr.eval eval_void expr)
 
 let demo() =
   run @@ Build.(c 10 + c 2 * c 3);

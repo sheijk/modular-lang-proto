@@ -19,8 +19,7 @@ struct
   let rec eval eval_other = function
     | Literal num -> num
     | BinOp (lhs, op, rhs) -> (to_function op) (eval eval_other lhs) (eval eval_other rhs)
-    | Other e ->
-      eval_other e
+    | Other e -> eval_other e
 end
 
 module Build =
