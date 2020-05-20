@@ -16,15 +16,15 @@ for extensible ASTs.
 
 The following small languages will be implemented and combined:
 
-** calc-int
+** DONE calc-int
 Arithmetic expressions with integers
-** calc-float
+** DONE calc-float
 Arithmetic expressions with floats
-** calc
+** DONE calc
 calc-int + calc-float and conversions
-** algo-int
+** TODO algo-int
 Extending calc-int with conditional evaluation, loops, and booleans
-** algo-generic
+** TODO algo-generic
 Extending a given language with conditional evaluation and loops
 
 * Building

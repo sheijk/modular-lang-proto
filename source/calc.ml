@@ -6,10 +6,6 @@ end
 
 module Expr =
 struct
-  type binop =
-    | Int_binop of Calc_int.Expr.binop
-    | Float_binop of Calc_float.Expr.binop
-
   type t =
     | Int_expr of t Calc_int.Expr.t
     | Float_expr of t Calc_float.Expr.t
