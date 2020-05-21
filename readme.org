@@ -34,8 +34,7 @@ Extending a given language with conditional evaluation and loops
 ** Initial one time setup
 
 #+begin_src sh
-opam switch create . ocaml-base-compiler.4.10.0
-opam install dune merlin ppx_deriving
+opam switch create . ocaml-base-compiler.4.10.0 --deps-only
 #+end_src
 
 ** Build the project
