@@ -77,61 +77,68 @@ struct
     | Error msg ->
       Type.Error msg
 
-  let rec eval = function
-    | Calc_expr expr ->
-      Calc_value (Calc.Expr.eval eval_calc expr)
-    | If_expr (condition, true_body, false_body) ->
-      begin match eval condition with
-        | Bool_value false -> eval false_body
-        | Bool_value true -> eval true_body
-        | Calc_value (Calc.Expr.Int_value 0) -> eval false_body
-        | Calc_value (Calc.Expr.Int_value _) -> eval true_body
-        | Calc_value (Calc.Expr.Float_value 0.) -> eval false_body
-        | Calc_value (Calc.Expr.Float_value _) -> eval true_body
-      end
-    | BoolLiteral b ->
-      Bool_value b
-    | BoolBinOp (lhs, op, rhs) ->
-      begin match (eval lhs, eval rhs) with
-        | Bool_value lhs, Bool_value rhs ->
-          Bool_value ((to_function_bool op) lhs rhs)
-        | _ ->
-          failwith "BoolBinOp needs two bool parameters"
-      end
-    | Comparison (lhs, op, rhs) ->
-      begin match (eval lhs, eval rhs) with
-        | Calc_value (Calc.Expr.Int_value lhs), Calc_value (Calc.Expr.Int_value rhs) ->
-          Bool_value ((comparison_function op) lhs rhs)
-        | Calc_value (Calc.Expr.Float_value lhs), Calc_value (Calc.Expr.Float_value rhs) ->
-          Bool_value ((comparison_function op) lhs rhs)
-        | _ ->
-          failwith "Comparison needs two numeric parameters of the same type"
-      end
-    | Loop expr ->
-      begin
-        let rec loop index =
-          if index > 100 then
-            failwith "too many loop iterations";
-          match eval expr with
-          | Calc_value (Calc.Expr.Int_value 0) ->
-            0
-          | _ ->
-            loop (index + 1)
-        in
-        try
-          Calc_value (Calc.Expr.Int_value (loop 0))
-        with
-        | LoopBreakExn value -> value
-      end
-    | LoopBreak expr ->
-      raise (LoopBreakExn (eval expr))
-    | Error msg ->
-      failwith msg
+  type context = unit
 
-  and eval_calc expr =
-    match eval expr with
-    | Calc_value i -> i
-    | Bool_value _ -> failwith "expected int"
+  let eval expr =
+    let ctx = () in
+    ignore ctx;
+    let rec eval = function
+      | Calc_expr expr ->
+        Calc_value (Calc.Expr.eval eval_calc expr)
+      | If_expr (condition, true_body, false_body) ->
+        begin match eval condition with
+          | Bool_value false -> eval false_body
+          | Bool_value true -> eval true_body
+          | Calc_value (Calc.Expr.Int_value 0) -> eval false_body
+          | Calc_value (Calc.Expr.Int_value _) -> eval true_body
+          | Calc_value (Calc.Expr.Float_value 0.) -> eval false_body
+          | Calc_value (Calc.Expr.Float_value _) -> eval true_body
+        end
+      | BoolLiteral b ->
+        Bool_value b
+      | BoolBinOp (lhs, op, rhs) ->
+        begin match (eval lhs, eval rhs) with
+          | Bool_value lhs, Bool_value rhs ->
+            Bool_value ((to_function_bool op) lhs rhs)
+          | _ ->
+            failwith "BoolBinOp needs two bool parameters"
+        end
+      | Comparison (lhs, op, rhs) ->
+        begin match (eval lhs, eval rhs) with
+          | Calc_value (Calc.Expr.Int_value lhs), Calc_value (Calc.Expr.Int_value rhs) ->
+            Bool_value ((comparison_function op) lhs rhs)
+          | Calc_value (Calc.Expr.Float_value lhs), Calc_value (Calc.Expr.Float_value rhs) ->
+            Bool_value ((comparison_function op) lhs rhs)
+          | _ ->
+            failwith "Comparison needs two numeric parameters of the same type"
+        end
+      | Loop expr ->
+        begin
+          let rec loop index =
+            if index > 100 then
+              failwith "too many loop iterations";
+            match eval expr with
+            | Calc_value (Calc.Expr.Int_value 0) ->
+              0
+            | _ ->
+              loop (index + 1)
+          in
+          try
+            Calc_value (Calc.Expr.Int_value (loop 0))
+          with
+          | LoopBreakExn value -> value
+        end
+      | LoopBreak expr ->
+        raise (LoopBreakExn (eval expr))
+      | Error msg ->
+        failwith msg
+
+    and eval_calc expr =
+      match eval expr with
+      | Calc_value i -> i
+      | Bool_value _ -> failwith "expected int"
+    in
+    eval expr
 end
 
 module Build =
