@@ -122,6 +122,8 @@ struct
     Expr.If_expr (condition, true_body, false_body)
 end
 
+let had_errors = ref false
+
 let run expect expr =
   Printf.printf "Running\n  %s\n  => %s\n"
     (Expr.show expr)
@@ -129,9 +131,12 @@ let run expect expr =
      | result ->
        if Expr.equal_value expect result then
          Expr.show_value result
-       else
-         Printf.sprintf "*error: expected %s but got %s" (Expr.show_value expect) (Expr.show_value result)
+       else begin
+         had_errors := true;
+         Printf.sprintf "*error: expected %s but got %s" (Expr.show_value expect) (Expr.show_value result);
+       end
      | exception Failure str ->
+       had_errors := true;
        Printf.sprintf "*exception %s*" str)
 
 let demo() =
@@ -145,5 +150,7 @@ let demo() =
   run (b true) Build.(b true || b false);
   run (b false) Build.(b true && b false);
   run (i 1) Build.(cond (b true) (i 1) (i 999));
+  if !had_errors then
+    print_endline "error: some tests failed";
   ()
 
