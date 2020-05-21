@@ -24,7 +24,7 @@ Arithmetic expressions with floats
 calc-int + calc-float and conversions
 ** DONE algo-int
 Extending calc-int with conditional evaluation
-** TODO algo
+** DONE algo
 Extending calc with conditional evaluation, loops, and booleans
 ** TODO algo-generic
 Extending a given language with conditional evaluation and loops

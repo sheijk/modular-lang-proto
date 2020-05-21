@@ -80,12 +80,15 @@ struct
       Type.Error msg
 
   type context = {
-    index : int option ref;
+    index : int option;
   }
 
   let eval expr =
-    let ctx = { index = ref None } in
-    let rec eval = function
+    let rec eval ctx =
+      let eval_ctx ctx expr = eval ctx expr in
+      let eval expr = eval ctx expr in
+      let eval_calc expr = eval_calc ctx expr in
+      function
       | Calc_expr expr ->
         Calc_value (Calc.Expr.eval eval_calc expr)
       | If_expr (condition, true_body, false_body) ->
@@ -116,39 +119,35 @@ struct
             failwith "Comparison needs two numeric parameters of the same type"
         end
       | Loop expr ->
-        let old_index = !(ctx.index) in
-        ctx.index := Some 0;
-        let value =
+        begin
           let rec loop index =
-            ctx.index := Some index;
             if index > 100 then
               failwith "too many loop iterations";
-            ignore (eval expr);
+            ignore (eval_ctx { index = Some index } expr);
             loop (index + 1)
           in
           try
             Calc_value (Calc.Expr.Int_value (loop 0))
           with
           | LoopBreakExn value -> value
-        in
-        ctx.index := old_index;
-        value
+        end
       | LoopBreak expr ->
         raise (LoopBreakExn (eval expr))
       | LoopIndex ->
-        begin match !(ctx.index) with
+        begin match ctx.index with
           | Some value -> Calc_value (Calc.Expr.Int_value value)
           | None -> failwith "index used outside of loop"
         end
       | Error msg ->
         failwith msg
 
-    and eval_calc expr =
-      match eval expr with
+    and eval_calc ctx expr =
+      match eval ctx expr with
       | Calc_value i -> i
       | Bool_value _ -> failwith "expected int"
     in
-    eval expr
+    let ctx = { index = None } in
+    eval ctx expr
 end
 
 module Build =
