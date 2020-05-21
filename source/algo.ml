@@ -27,6 +27,7 @@ struct
     | Comparison of t * comparison_t * t
     | Loop of t
     | LoopBreak of t
+    | LoopIndex
     | Error of string
   [@@deriving show]
 
@@ -74,14 +75,16 @@ struct
       Type.Bool
     | Loop expr -> type_of expr
     | LoopBreak expr -> type_of expr
+    | LoopIndex -> Type.Int
     | Error msg ->
       Type.Error msg
 
-  type context = unit
+  type context = {
+    index : int option ref;
+  }
 
   let eval expr =
-    let ctx = () in
-    ignore ctx;
+    let ctx = { index = ref None } in
     let rec eval = function
       | Calc_expr expr ->
         Calc_value (Calc.Expr.eval eval_calc expr)
@@ -113,8 +116,11 @@ struct
             failwith "Comparison needs two numeric parameters of the same type"
         end
       | Loop expr ->
-        begin
+        let old_index = !(ctx.index) in
+        ctx.index := Some 0;
+        let value =
           let rec loop index =
+            ctx.index := Some index;
             if index > 100 then
               failwith "too many loop iterations";
             ignore (eval expr);
@@ -124,9 +130,16 @@ struct
             Calc_value (Calc.Expr.Int_value (loop 0))
           with
           | LoopBreakExn value -> value
-        end
+        in
+        ctx.index := old_index;
+        value
       | LoopBreak expr ->
         raise (LoopBreakExn (eval expr))
+      | LoopIndex ->
+        begin match !(ctx.index) with
+          | Some value -> Calc_value (Calc.Expr.Int_value value)
+          | None -> failwith "index used outside of loop"
+        end
       | Error msg ->
         failwith msg
 
@@ -176,6 +189,8 @@ struct
     Expr.Loop expr
   let break expr =
     Expr.LoopBreak expr
+  let index =
+    Expr.LoopIndex
 end
 
 let had_errors = ref false
@@ -231,6 +246,7 @@ let demo() =
 
   run exn Build.(loop (i 0));
   run (i 10) Build.(loop (break (i 10)));
+  run (i 11) Build.(loop (cond (index > i 10) (break index) (i 1)));
 
   if !had_errors then
     print_endline "error: some tests failed";
