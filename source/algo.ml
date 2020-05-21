@@ -181,19 +181,31 @@ let run expect expr =
     (Expr.show expr)
     (match Expr.eval expr with
      | result ->
-       if Expr.equal_value expect result then
+       let ok =
+         match expect with
+         | Some expect -> Expr.equal_value expect result
+         | None -> false
+       in
+       if ok then
          Expr.show_value result
        else begin
          had_errors := true;
-         Printf.sprintf "*error: expected %s but got %s" (Expr.show_value expect) (Expr.show_value result);
+         let expect_str =
+           match expect with
+           | Some value -> Expr.show_value value
+           | None -> "exception"
+         in
+         Printf.sprintf "*error: expected %s but got %s" expect_str (Expr.show_value result);
        end
      | exception Failure str ->
-       had_errors := true;
+       let expected_result = expect = None in
+       had_errors := not expected_result;
        Printf.sprintf "*exception %s*" str)
 
 let demo() =
-  let i i = Expr.Calc_value (Calc.Expr.Int_value i) in
-  let b b = Expr.Bool_value b in
+  let i i = Some (Expr.Calc_value (Calc.Expr.Int_value i)) in
+  let b b = Some (Expr.Bool_value b) in
+  let exn = None in
 
   run (i 10) Build.(i 3 + i 7);
 
@@ -213,7 +225,7 @@ let demo() =
   run (b true) Build.(i 3 > i (-10));
   run (b false) Build.(i 3 > i 3);
 
-  run (i 0) Build.(loop (i 0));
+  run exn Build.(loop (i 0));
   run (i 10) Build.(loop (break (i 10)));
 
   if !had_errors then
