@@ -22,8 +22,10 @@ Arithmetic expressions with integers
 Arithmetic expressions with floats
 ** DONE calc
 calc-int + calc-float and conversions
-** TODO algo-int
-Extending calc-int with conditional evaluation, loops, and booleans
+** DONE algo-int
+Extending calc-int with conditional evaluation
+** TODO algo
+Extending calc with conditional evaluation, loops, and booleans
 ** TODO algo-generic
 Extending a given language with conditional evaluation and loops
 
@@ -33,18 +35,20 @@ Extending a given language with conditional evaluation and loops
 
 #+begin_src sh
 opam switch create . ocaml-base-compiler.4.10.0
-opam install dune merlin
+opam install dune merlin ppx_deriving
 #+end_src
 
 ** Build the project
 
 #+begin_src sh
-dune build source/calc-int/calc_int_app.exe
+dune build source/calc_demo.exe
+dune build source/algo_demo.exe
 #+end_src
 
 ** Running demo app
 
 #+begin_src sh
-dune exec source/calc-int/calc_int_app.exe
+dune exec source/calc_demo.exe
+dune exec source/algo_demo.exe
 #+end_src
 
