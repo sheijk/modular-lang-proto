@@ -11,9 +11,16 @@
  (modules Calc_demo)
  (libraries Calc_languages))
 
+(library
+ (name Algo_languages)
+ (preprocess (pps ppx_deriving.show))
+ (modules Algo_int Algo)
+ (libraries Calc_languages)
+ (wrapped false))
+
 (executable
  (preprocess (pps ppx_deriving.show))
  (name algo_demo)
- (modules Algo_int Algo_demo)
- (libraries Calc_languages))
+ (modules Algo_demo)
+ (libraries Calc_languages Algo_languages))
 
