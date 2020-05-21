@@ -17,6 +17,8 @@ struct
     | If_expr of t * t * t
     | BoolLiteral of bool
     | BoolBinOp of t * binop_bool * t
+    | Loop of t
+    | LoopBreak of t
     | Error of string
   [@@deriving show]
 
@@ -24,6 +26,8 @@ struct
     | Calc_value of Calc.Expr.value
     | Bool_value of bool
   [@@deriving show]
+
+  exception LoopBreakExn of value
 
   let equal_value l r =
     match (l, r) with
@@ -58,6 +62,8 @@ struct
         | Type.Bool, Type.Bool -> Type.Bool
         | _ -> Type.Error "if branches must have the same type"
       end
+    | Loop expr -> type_of expr
+    | LoopBreak expr -> type_of expr
     | Error msg ->
       Type.Error msg
 
@@ -82,6 +88,24 @@ struct
         | _ ->
           failwith "BoolBinOp needs two bool parameters"
       end
+    | Loop expr ->
+      begin
+        let rec loop index =
+          if index > 100 then
+            failwith "too many loop iterations";
+          match eval expr with
+          | Calc_value (Calc.Expr.Int_value 0) ->
+            0
+          | _ ->
+            loop (index + 1)
+        in
+        try
+          Calc_value (Calc.Expr.Int_value (loop 0))
+        with
+        | LoopBreakExn value -> value
+      end
+    | LoopBreak expr ->
+      raise (LoopBreakExn (eval expr))
     | Error msg ->
       failwith msg
 
@@ -120,6 +144,11 @@ struct
 
   let cond condition true_body false_body =
     Expr.If_expr (condition, true_body, false_body)
+
+  let loop expr =
+    Expr.Loop expr
+  let break expr =
+    Expr.LoopBreak expr
 end
 
 let had_errors = ref false
@@ -150,6 +179,8 @@ let demo() =
   run (b true) Build.(b true || b false);
   run (b false) Build.(b true && b false);
   run (i 1) Build.(cond (b true) (i 1) (i 999));
+  run (i 0) Build.(loop (i 0));
+  run (i 10) Build.(loop (break (i 10)));
   if !had_errors then
     print_endline "error: some tests failed";
   ()
