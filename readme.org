@@ -34,14 +34,14 @@ Extending a given language with conditional evaluation and loops
 ** Initial one time setup
 
 #+begin_src sh
+dune build modular-lang-proto.opam
 opam switch create . ocaml-base-compiler.4.10.0 --deps-only
 #+end_src
 
 ** Build the project
 
 #+begin_src sh
-dune build source/calc_demo.exe
-dune build source/algo_demo.exe
+dune build
 #+end_src
 
 ** Running demo app
