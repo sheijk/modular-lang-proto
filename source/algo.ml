@@ -8,15 +8,23 @@ module Expr =
 struct
   type binop_bool = And | Or [@@deriving show]
 
-  let to_function = function
+  let to_function_bool = function
     | And -> ( && )
     | Or -> ( || )
+
+  type comparison_t = Less | Greater | Equal [@@deriving show]
+
+  let comparison_function = function
+    | Less -> ( < )
+    | Greater -> ( > )
+    | Equal -> ( = )
 
   type t =
     | Calc_expr of t Calc.Expr.t
     | If_expr of t * t * t
     | BoolLiteral of bool
     | BoolBinOp of t * binop_bool * t
+    | Comparison of t * comparison_t * t
     | Loop of t
     | LoopBreak of t
     | Error of string
@@ -62,6 +70,8 @@ struct
         | Type.Bool, Type.Bool -> Type.Bool
         | _ -> Type.Error "if branches must have the same type"
       end
+    | Comparison _ ->
+      Type.Bool
     | Loop expr -> type_of expr
     | LoopBreak expr -> type_of expr
     | Error msg ->
@@ -84,9 +94,18 @@ struct
     | BoolBinOp (lhs, op, rhs) ->
       begin match (eval lhs, eval rhs) with
         | Bool_value lhs, Bool_value rhs ->
-          Bool_value ((to_function op) lhs rhs)
+          Bool_value ((to_function_bool op) lhs rhs)
         | _ ->
           failwith "BoolBinOp needs two bool parameters"
+      end
+    | Comparison (lhs, op, rhs) ->
+      begin match (eval lhs, eval rhs) with
+        | Calc_value (Calc.Expr.Int_value lhs), Calc_value (Calc.Expr.Int_value rhs) ->
+          Bool_value ((comparison_function op) lhs rhs)
+        | Calc_value (Calc.Expr.Float_value lhs), Calc_value (Calc.Expr.Float_value rhs) ->
+          Bool_value ((comparison_function op) lhs rhs)
+        | _ ->
+          failwith "Comparison needs two numeric parameters of the same type"
       end
     | Loop expr ->
       begin
@@ -142,6 +161,10 @@ struct
   let ( && ) l r = Expr.BoolBinOp (l, Expr.And, r)
   let ( || ) l r = Expr.BoolBinOp (l, Expr.Or, r)
 
+  let ( < ) l r = Expr.Comparison (l, Expr.Less, r)
+  let ( > ) l r = Expr.Comparison (l, Expr.Greater, r)
+  let ( = ) l r = Expr.Comparison (l, Expr.Equal, r)
+
   let cond condition true_body false_body =
     Expr.If_expr (condition, true_body, false_body)
 
@@ -171,16 +194,28 @@ let run expect expr =
 let demo() =
   let i i = Expr.Calc_value (Calc.Expr.Int_value i) in
   let b b = Expr.Bool_value b in
+
   run (i 10) Build.(i 3 + i 7);
+
   run (i 2) Build.(cond (i 0) (i 1) (i 2));
   run (i 1) Build.(cond (i 1) (i 1) (i 2));
   run (i 22) Build.(cond (i 1 - i 1) (i 1 + i 10) (i 2 + i 20));
   run (i 11) Build.(cond (f 2. - f 1.) (i 1 + i 10) (i 2 + i 20));
+  run (i 1) Build.(cond (b true) (i 1) (i 999));
+
   run (b true) Build.(b true || b false);
   run (b false) Build.(b true && b false);
-  run (i 1) Build.(cond (b true) (i 1) (i 999));
+
+  run (b true) Build.(i 4 < i 10);
+  run (b false) Build.(i 4 > i 10);
+  run (b true) Build.(i 3 = i 3);
+  run (b false) Build.(i 3 = i 4);
+  run (b true) Build.(i 3 > i (-10));
+  run (b false) Build.(i 3 > i 3);
+
   run (i 0) Build.(loop (i 0));
   run (i 10) Build.(loop (break (i 10)));
+
   if !had_errors then
     print_endline "error: some tests failed";
   ()
