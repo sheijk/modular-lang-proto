@@ -5,4 +5,5 @@ let run name f =
 
 let () =
   run "Algo_int" Algo_int.demo;
+  run "Algo" Algo.demo;
   ()
