@@ -117,11 +117,8 @@ struct
           let rec loop index =
             if index > 100 then
               failwith "too many loop iterations";
-            match eval expr with
-            | Calc_value (Calc.Expr.Int_value 0) ->
-              0
-            | _ ->
-              loop (index + 1)
+            ignore (eval expr);
+            loop (index + 1)
           in
           try
             Calc_value (Calc.Expr.Int_value (loop 0))
