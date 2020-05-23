@@ -6,25 +6,9 @@ end
 
 module Expr =
 struct
-  type binop_bool = And | Or [@@deriving show]
-
-  let to_function_bool = function
-    | And -> ( && )
-    | Or -> ( || )
-
-  type comparison_t = Less | Greater | Equal [@@deriving show]
-
-  let comparison_function = function
-    | Less -> ( < )
-    | Greater -> ( > )
-    | Equal -> ( = )
-
   type t =
     | Calc_expr of t Calc.Expr.t
     | If_expr of t * t * t
-    | BoolLiteral of bool
-    | BoolBinOp of t * binop_bool * t
-    | Comparison of t * comparison_t * t
     | Loop of t
     | LoopBreak of t
     | LoopIndex
@@ -33,27 +17,27 @@ struct
 
   type value =
     | Calc_value of Calc.Expr.value
-    | Bool_value of bool
   [@@deriving show]
 
   exception LoopBreakExn of value
 
   let equal_value l r =
     match (l, r) with
-    | Bool_value l, Bool_value r -> l = r
+    | Calc_value (Calc.Expr.Bool_value l), Calc_value (Calc.Expr.Bool_value r) ->
+      l = r
     | Calc_value (Calc.Expr.Int_value l), Calc_value (Calc.Expr.Int_value r) ->
       l = r
     | Calc_value (Calc.Expr.Float_value l), Calc_value (Calc.Expr.Float_value r) ->
       l = r
-    | Calc_value (Calc.Expr.Float_value _), Calc_value (Calc.Expr.Int_value _)
-    | Calc_value (Calc.Expr.Int_value _), Calc_value (Calc.Expr.Float_value _)
-    | Bool_value _, Calc_value _
-    | Calc_value _, Bool_value _ ->
+    | Calc_value (Calc.Expr.Float_value _), Calc_value (Calc.Expr.Int_value _ | Calc.Expr.Bool_value _)
+    | Calc_value (Calc.Expr.Int_value _), Calc_value (Calc.Expr.Float_value _ | Calc.Expr.Bool_value _)
+    | Calc_value (Calc.Expr.Bool_value _), Calc_value (Calc.Expr.Float_value _ | Calc.Expr.Int_value _) ->
       false
 
   let rec type_of = function
     | Calc_expr expr ->
       begin match Calc.Expr.type_of expr with
+        | Calc.Type.Bool -> Type.Float
         | Calc.Type.Int -> Type.Int
         | Calc.Type.Float -> Type.Float
         | Calc.Type.Error msg -> Type.Error msg
@@ -64,15 +48,6 @@ struct
         | Float, Float -> Float
         | _ -> Error "mismatching types"
       end
-    | BoolLiteral _ ->
-      Type.Bool
-    | BoolBinOp (lhs, _, rhs) ->
-      begin match (type_of lhs, type_of rhs) with
-        | Type.Bool, Type.Bool -> Type.Bool
-        | _ -> Type.Error "if branches must have the same type"
-      end
-    | Comparison _ ->
-      Type.Bool
     | Loop expr -> type_of expr
     | LoopBreak expr -> type_of expr
     | LoopIndex -> Type.Int
@@ -93,30 +68,12 @@ struct
         Calc_value (Calc.Expr.eval eval_calc expr)
       | If_expr (condition, true_body, false_body) ->
         begin match eval condition with
-          | Bool_value false -> eval false_body
-          | Bool_value true -> eval true_body
+          | Calc_value (Calc.Expr.Bool_value false) -> eval false_body
+          | Calc_value (Calc.Expr.Bool_value true) -> eval true_body
           | Calc_value (Calc.Expr.Int_value 0) -> eval false_body
           | Calc_value (Calc.Expr.Int_value _) -> eval true_body
           | Calc_value (Calc.Expr.Float_value 0.) -> eval false_body
           | Calc_value (Calc.Expr.Float_value _) -> eval true_body
-        end
-      | BoolLiteral b ->
-        Bool_value b
-      | BoolBinOp (lhs, op, rhs) ->
-        begin match (eval lhs, eval rhs) with
-          | Bool_value lhs, Bool_value rhs ->
-            Bool_value ((to_function_bool op) lhs rhs)
-          | _ ->
-            failwith "BoolBinOp needs two bool parameters"
-        end
-      | Comparison (lhs, op, rhs) ->
-        begin match (eval lhs, eval rhs) with
-          | Calc_value (Calc.Expr.Int_value lhs), Calc_value (Calc.Expr.Int_value rhs) ->
-            Bool_value ((comparison_function op) lhs rhs)
-          | Calc_value (Calc.Expr.Float_value lhs), Calc_value (Calc.Expr.Float_value rhs) ->
-            Bool_value ((comparison_function op) lhs rhs)
-          | _ ->
-            failwith "Comparison needs two numeric parameters of the same type"
         end
       | Loop expr ->
         begin
@@ -144,7 +101,6 @@ struct
     and eval_calc ctx expr =
       match eval ctx expr with
       | Calc_value i -> i
-      | Bool_value _ -> failwith "expected int"
     in
     let ctx = { index = None } in
     eval ctx expr
@@ -154,7 +110,7 @@ module Build =
 struct
   let i i : Expr.t = Expr.Calc_expr (Calc.Expr.Int_expr (Calc_int.Expr.Literal i))
   let f f : Expr.t = Expr.Calc_expr (Calc.Expr.Float_expr (Calc_float.Expr.Literal f))
-  let b b : Expr.t = Expr.BoolLiteral b
+  let b b : Expr.t = Expr.Calc_expr (Calc.Expr.Bool_expr (Calc_bool.Expr.Literal b))
 
   let make_binop op_int op_float = fun l r ->
     match (Expr.type_of l, Expr.type_of r) with
@@ -174,12 +130,20 @@ struct
   let ( + ) = make_binop Calc_int.Expr.Add Calc_float.Expr.Add
   let ( - ) = make_binop Calc_int.Expr.Sub Calc_float.Expr.Sub
 
-  let ( && ) l r = Expr.BoolBinOp (l, Expr.And, r)
-  let ( || ) l r = Expr.BoolBinOp (l, Expr.Or, r)
+  let to_bool (expr : Expr.t) : 'b Calc_bool.Expr.t =
+    Calc_bool.Expr.Other (Calc.Expr.Other expr)
 
-  let ( < ) l r = Expr.Comparison (l, Expr.Less, r)
-  let ( > ) l r = Expr.Comparison (l, Expr.Greater, r)
-  let ( = ) l r = Expr.Comparison (l, Expr.Equal, r)
+  let make_bool_op op = fun l r ->
+    Expr.Calc_expr (Calc.Expr.Bool_expr (Calc_bool.Expr.BinOp (to_bool l, op, to_bool r)))
+
+  let ( && ) = make_bool_op Calc_bool.Expr.And
+  let ( || ) = make_bool_op Calc_bool.Expr.And
+
+  let to_calc expr = (Calc.Expr.Other expr)
+
+  let ( < ) l r = Expr.Calc_expr (Calc.Expr.Comparison (to_calc l, Calc.Expr.Less, to_calc r))
+  let ( > ) l r = Expr.Calc_expr (Calc.Expr.Comparison (to_calc l, Calc.Expr.Greater, to_calc r))
+  let ( = ) l r = Expr.Calc_expr (Calc.Expr.Comparison (to_calc l, Calc.Expr.Equal, to_calc r))
 
   let cond condition true_body false_body =
     Expr.If_expr (condition, true_body, false_body)
@@ -222,7 +186,7 @@ let run expect expr =
 
 let demo() =
   let i i = Some (Expr.Calc_value (Calc.Expr.Int_value i)) in
-  let b b = Some (Expr.Bool_value b) in
+  let b b = Some (Expr.Calc_value (Calc.Expr.Bool_value b)) in
   let exn = None in
 
   run (i 10) Build.(i 3 + i 7);
