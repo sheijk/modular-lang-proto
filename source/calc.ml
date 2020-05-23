@@ -99,38 +99,42 @@ and eval_bool eval_other expr =
 
 module Build =
 struct
-  let i i = Int_expr (Calc_int.Literal i)
-  let f f = Float_expr (Calc_float.Literal f)
-  let b b = Bool_expr (Calc_bool.Literal b)
-
-  let as_float = function
-    | Float_expr fe -> fe
-    | expr -> Calc_float.Other expr
-
-  let as_int = function
-    | Int_expr ie -> ie
-    | expr -> Calc_int.Other expr
-
-  let as_bool = function
+  let to_bool = function
     | Bool_expr ie -> ie
     | expr -> Calc_bool.Other expr
 
-  let make_op op_int op_float = fun l r ->
+  let to_int = function
+    | Int_expr ie -> ie
+    | expr -> Calc_int.Other expr
+
+  let to_float = function
+    | Float_expr fe -> fe
+    | expr -> Calc_float.Other expr
+
+  let from_bool bexpr = Bool_expr bexpr
+  let from_int iexpr = Int_expr iexpr
+  let from_float fexpr = Float_expr fexpr
+
+  let b b = from_bool (Calc_bool.Literal b)
+  let i i = from_int (Calc_int.Literal i)
+  let f f = from_float (Calc_float.Literal f)
+
+  let make_num_op op_int op_float = fun l r ->
     match (type_of l, type_of r) with
     | Type.Int, Type.Int ->
-      Int_expr (Calc_int.BinOp (as_int l, op_int, as_int r))
+      from_int (Calc_int.BinOp (to_int l, op_int, to_int r))
     | Type.Float, Type.Float ->
-      Float_expr (Calc_float.BinOp (as_float l, op_float, as_float r))
+      from_float (Calc_float.BinOp (to_float l, op_float, to_float r))
     | _ ->
       Error "type error"
 
-  let ( + ) = make_op Calc_int.Add Calc_float.Add
-  let ( - ) = make_op Calc_int.Sub Calc_float.Sub
-  let ( * ) = make_op Calc_int.Mul Calc_float.Mul
-  let ( / ) = make_op Calc_int.Div Calc_float.Div
+  let ( + ) = make_num_op Calc_int.Add Calc_float.Add
+  let ( - ) = make_num_op Calc_int.Sub Calc_float.Sub
+  let ( * ) = make_num_op Calc_int.Mul Calc_float.Mul
+  let ( / ) = make_num_op Calc_int.Div Calc_float.Div
 
-  let ( && ) l r = Bool_expr (Calc_bool.BinOp (as_bool l, Calc_bool.And, as_bool r))
-  let ( || ) l r = Bool_expr (Calc_bool.BinOp (as_bool l, Calc_bool.Or, as_bool r))
+  let ( && ) l r = from_bool (Calc_bool.BinOp (to_bool l, Calc_bool.And, to_bool r))
+  let ( || ) l r = from_bool (Calc_bool.BinOp (to_bool l, Calc_bool.Or, to_bool r))
 
   let ( < ) l r = Comparison (l, Less, r)
   let ( > ) l r = Comparison (l, Greater, r)

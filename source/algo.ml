@@ -105,52 +105,58 @@ let eval expr =
 
 module Build =
 struct
-  let i i : t = Calc_expr (Calc.Int_expr (Calc_int.Literal i))
-  let f f : t = Calc_expr (Calc.Float_expr (Calc_float.Literal f))
-  let b b : t = Calc_expr (Calc.Bool_expr (Calc_bool.Literal b))
+  let to_bool = function
+    | Calc_expr (Calc.Bool_expr fexpr) -> fexpr
+    | expr -> Calc_bool.Other (Calc.Other expr)
+  let to_int = function
+    | Calc_expr (Calc.Int_expr fexpr) -> fexpr
+    | expr -> Calc_int.Other (Calc.Other expr)
+  let to_float = function
+    | Calc_expr (Calc.Float_expr fexpr) -> fexpr
+    | expr -> Calc_float.Other (Calc.Other expr)
+  let to_calc = function
+    | Calc_expr cexpr -> cexpr
+    | expr -> Calc.Other expr
+
+  let from_bool bexpr = Calc_expr (Calc.Bool_expr bexpr)
+  let from_int iexpr = Calc_expr (Calc.Int_expr iexpr)
+  let from_float iexpr = Calc_expr (Calc.Float_expr iexpr)
+  let from_calc cexpr = Calc_expr cexpr
+
+  let b b : t = from_bool (Calc_bool.Literal b)
+  let i i : t = from_int (Calc_int.Literal i)
+  let f f : t = from_float (Calc_float.Literal f)
 
   let make_binop op_int op_float = fun l r ->
     match (type_of l, type_of r) with
     | Type.Int, Type.Int ->
-      Calc_expr (Calc.Int_expr (Calc_int.BinOp
-                                  (Calc_int.Other (Calc.Other l),
-                                   op_int,
-                                   Calc_int.Other (Calc.Other r))))
+      from_int (Calc_int.BinOp (to_int l, op_int, to_int r))
     | Type.Float, Type.Float ->
-      Calc_expr (Calc.Float_expr (Calc_float.BinOp
-                                    (Calc_float.Other (Calc.Other l),
-                                     op_float,
-                                     Calc_float.Other (Calc.Other r))))
+      from_float (Calc_float.BinOp (to_float l, op_float, to_float r))
     | _ ->
       Error "type error"
 
   let ( + ) = make_binop Calc_int.Add Calc_float.Add
   let ( - ) = make_binop Calc_int.Sub Calc_float.Sub
-
-  let to_bool (expr : t) : 'b Calc_bool.t =
-    Calc_bool.Other (Calc.Other expr)
+  let ( * ) = make_binop Calc_int.Mul Calc_float.Mul
+  let ( / ) = make_binop Calc_int.Div Calc_float.Div
 
   let make_bool_op op = fun l r ->
-    Calc_expr (Calc.Bool_expr (Calc_bool.BinOp (to_bool l, op, to_bool r)))
+    from_bool (Calc_bool.BinOp (to_bool l, op, to_bool r))
 
   let ( && ) = make_bool_op Calc_bool.And
   let ( || ) = make_bool_op Calc_bool.And
 
-  let to_calc expr = (Calc.Other expr)
-
-  let ( < ) l r = Calc_expr (Calc.Comparison (to_calc l, Calc.Less, to_calc r))
-  let ( > ) l r = Calc_expr (Calc.Comparison (to_calc l, Calc.Greater, to_calc r))
-  let ( = ) l r = Calc_expr (Calc.Comparison (to_calc l, Calc.Equal, to_calc r))
+  let ( < ) l r = from_calc (Calc.Comparison (to_calc l, Calc.Less, to_calc r))
+  let ( > ) l r = from_calc (Calc.Comparison (to_calc l, Calc.Greater, to_calc r))
+  let ( = ) l r = from_calc (Calc.Comparison (to_calc l, Calc.Equal, to_calc r))
 
   let cond condition true_body false_body =
     If_expr (condition, true_body, false_body)
 
-  let loop expr =
-    Loop expr
-  let break expr =
-    LoopBreak expr
-  let index =
-    LoopIndex
+  let loop expr = Loop expr
+  let break expr = LoopBreak expr
+  let index = LoopIndex
 end
 
 let had_errors = ref false
