@@ -6,12 +6,20 @@ end
 
 module Expr =
 struct
+  type comparison_t = Less | Greater | Equal [@@deriving show]
+
+  let comparison_function = function
+    | Less -> ( < )
+    | Greater -> ( > )
+    | Equal -> ( = )
+
   type 'a t =
     | Int_expr of 'a t Calc_int.Expr.t
     | Float_expr of 'a t Calc_float.Expr.t
     | Bool_expr of 'a t Calc_bool.Expr.t
     | To_float of 'a t
     | To_int of 'a t
+    | Comparison of 'a t * comparison_t * 'a t
     | Other of 'a
     | Error of string
   [@@deriving show]
@@ -29,7 +37,8 @@ struct
     | Float_expr _
     | To_float _ ->
       Type.Float
-    | Bool_expr _ ->
+    | Bool_expr _
+    | Comparison _ ->
       Type.Bool
     | Other _ ->
       Type.Error "invalid embedded type"
@@ -60,6 +69,15 @@ struct
           iv
         | Bool_value b ->
           Int_value (if b then 1 else 0)
+      end
+    | Comparison (lhs, op, rhs) ->
+      begin match (eval eval_other lhs, eval eval_other rhs) with
+        | Int_value lhs, Int_value rhs ->
+          Bool_value ((comparison_function op) lhs rhs)
+        | Float_value lhs, Float_value rhs ->
+          Bool_value ((comparison_function op) lhs rhs)
+        | _ ->
+          failwith "Comparison needs two numeric parameters of the same type"
       end
     | Other expr ->
       eval_other expr
@@ -117,6 +135,10 @@ struct
   let ( && ) l r = Expr.Bool_expr (Calc_bool.Expr.BinOp (as_bool l, Calc_bool.Expr.And, as_bool r))
   let ( || ) l r = Expr.Bool_expr (Calc_bool.Expr.BinOp (as_bool l, Calc_bool.Expr.Or, as_bool r))
 
+  let ( < ) l r = Expr.Comparison (l, Expr.Less, r)
+  let ( > ) l r = Expr.Comparison (l, Expr.Greater, r)
+  let ( = ) l r = Expr.Comparison (l, Expr.Equal, r)
+
   let to_f e = Expr.To_float e
   let to_i e = Expr.To_int e
 end
@@ -169,6 +191,13 @@ let demo() =
   run (f 24.) Build.(to_f (i 16) + f 8.);
   run (i 8) Build.(to_i (f 8.));
   run (i 74) Build.(to_i (f 64.) + i 10);
+
+  run (b true) Build.(i 4 < i 10);
+  run (b false) Build.(i 4 > i 10);
+  run (b true) Build.(i 3 = i 3);
+  run (b false) Build.(i 3 = i 4);
+  run (b true) Build.(i 3 > i (-10));
+  run (b false) Build.(i 3 > i 3);
 
   run (b true) Build.(b true || b false);
   run (b false) Build.(b true && b false);
