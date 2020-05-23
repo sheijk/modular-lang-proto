@@ -107,6 +107,21 @@ let eval expr =
   | LoopBreakExn _ ->
     failwith "break called while not in loop"
 
+let rec simplify = function
+  | Calc_expr (Calc.Other expr) ->
+    expr
+  | Calc_expr cexpr ->
+    Calc_expr (Calc.simplify simplify cexpr)
+  | If_expr (cond, t, f) ->
+    If_expr (simplify cond, simplify t, simplify f)
+  | Loop e ->
+    Loop (simplify e)
+  | LoopBreak e ->
+    LoopBreak (simplify e)
+  | LoopIndex ->
+    LoopIndex
+  | Error _ as expr -> expr
+
 module Build =
 struct
   let to_bool = function
@@ -166,30 +181,39 @@ end
 let had_errors = ref false
 
 let run expect expr =
-  Printf.printf "Running\n  %s\n  => %s\n"
-    (show expr)
-    (match eval expr with
-     | result ->
-       let ok =
-         match expect with
-         | Some expect -> equal_value expect result
-         | None -> false
-       in
-       if ok then
-         show_value result
-       else begin
-         had_errors := true;
-         let expect_str =
-           match expect with
-           | Some value -> show_value value
-           | None -> "exception"
-         in
-         Printf.sprintf "*error: expected %s but got %s" expect_str (show_value result);
-       end
-     | exception Failure str ->
-       let expected_result = expect = None in
-       had_errors := not expected_result;
-       Printf.sprintf "*exception %s*" str)
+  let test expr = 
+    match eval expr with
+    | result ->
+      let ok =
+        match expect with
+        | Some expect -> equal_value expect result
+        | None -> false
+      in
+      if ok then
+        show_value result
+      else begin
+        had_errors := true;
+        let expect_str =
+          match expect with
+          | Some value -> show_value value
+          | None -> "exception"
+        in
+        Printf.sprintf "*error: expected %s but got %s" expect_str (show_value result);
+      end
+    | exception Failure str ->
+      let expected_result = expect = None in
+      had_errors := not expected_result;
+      Printf.sprintf "*exception %s*" str
+  in
+  let simple_expr = simplify expr in
+  let simple_result = test simple_expr in
+  let full_result = test expr in
+  Printf.printf "Running\n  %s\n  => %s\n" (show simple_expr) (test expr);
+  if not (String.equal simple_result full_result) then begin
+    had_errors := true;
+    Printf.printf "error: eval(simplify(expr)) != eval(expr), bug in simplify, full expr =\n";
+    Printf.printf "  %s\n" (show expr)
+  end
 
 let demo() =
   let i i = Some (Calc_value (Calc.Int_value i)) in

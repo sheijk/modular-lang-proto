@@ -97,6 +97,31 @@ and eval_bool eval_other expr =
   | Bool_value b -> b
   | _ -> failwith "expected bool"
 
+let rec simplify simplify_other expr =
+  let simplify = simplify simplify_other in
+  match expr with
+  | Bool_expr (Calc_bool.Other expr) ->
+    simplify expr
+  | Bool_expr bexpr ->
+    Bool_expr (Calc_bool.simplify bexpr)
+  | Int_expr (Calc_int.Other expr) ->
+    simplify expr
+  | Int_expr bexpr ->
+    Int_expr (Calc_int.simplify bexpr)
+  | Float_expr (Calc_float.Other expr) ->
+    simplify expr
+  | Float_expr bexpr ->
+    Float_expr (Calc_float.simplify bexpr)
+  | Comparison (lhs, op, rhs) ->
+    Comparison (simplify lhs, op, simplify rhs)
+  | To_int expr ->
+    To_int (simplify expr)
+  | To_float expr ->
+    To_float (simplify expr)
+  | Other o ->
+    Other (simplify_other o)
+  | Error _ as e -> e
+
 module Build =
 struct
   let to_bool = function
