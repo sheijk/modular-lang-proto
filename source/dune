@@ -2,7 +2,7 @@
 (library
  (name Calc_languages)
  (preprocess (pps ppx_deriving.show))
- (modules Calc_int Calc_float Calc)
+ (modules Calc_int Calc_float Calc_bool Calc)
  (wrapped false))
 
 (executable
