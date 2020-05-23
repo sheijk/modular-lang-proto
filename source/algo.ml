@@ -101,7 +101,11 @@ let eval expr =
     | Calc_value i -> i
   in
   let ctx = { index = None } in
-  eval ctx expr
+  try
+    eval ctx expr
+  with
+  | LoopBreakExn _ ->
+    failwith "break called while not in loop"
 
 module Build =
 struct
@@ -211,6 +215,7 @@ let demo() =
   run (b false) Build.(i 3 > i 3);
 
   run exn Build.(loop (i 0));
+  run exn Build.(break (i 3));
   run (i 10) Build.(loop (break (i 10)));
   run (i 11) Build.(loop (cond (index > i 10) (break index) (i 1)));
 
