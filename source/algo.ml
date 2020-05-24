@@ -108,24 +108,21 @@ let eval expr =
     failwith "break called while not in loop"
 
 let rec simplify expr =
-  let rec simplify_calc (expr : t Calc.t) =
-    match expr with
-    | Calc.Other (Calc_expr expr) -> simplify_calc expr
-    | _ -> Calc.simplify simplify_calc expr
+  let rec simplify_calc = function
+    | Calc.Other expr ->
+      begin match simplify expr with
+        | Calc_expr cexpr -> cexpr
+        | expr -> Calc.Other expr
+      end
+    | cexpr -> Calc.simplify simplify_calc cexpr
   in
   match expr with
-  | Calc_expr (Calc.Other expr) ->
-    simplify expr
   | Calc_expr cexpr ->
-    Calc_expr (simplify_calc cexpr)
-  (* | Calc_expr (Calc.Bool_expr (Calc_bool.Other expr)) ->
-   *   Calc_expr (simplify_calc expr)
-   * | Calc_expr (Calc.Int_expr (Calc_int.Other expr)) ->
-   *   Calc_expr (simplify_calc expr)
-   * | Calc_expr (Calc.Float_expr (Calc_float.Other expr)) ->
-   *   Calc_expr (simplify_calc expr)
-   * | Calc_expr cexpr ->
-   *   Calc_expr (simplify_calc cexpr) *)
+    begin match Calc.simplify simplify_calc cexpr with
+      | Calc.Other (Calc_expr cexpr) -> Calc_expr cexpr
+      | Calc.Other expr -> expr
+      | iexpr -> Calc_expr iexpr
+    end
   | If_expr (cond, t, f) ->
     If_expr (simplify cond, simplify t, simplify f)
   | Loop e ->
@@ -187,7 +184,7 @@ end
 let had_errors = ref false
 
 let run expect expr =
-  let test expr = 
+  let test expr =
     match eval expr with
     | result ->
       let ok =
@@ -250,6 +247,32 @@ let demo() =
   run exn Build.(break (i 3));
   run (i 10) Build.(loop (break (i 10)));
   run (i 11) Build.(loop (cond (index > i 10) (break index) (i 1)));
+
+  run (i 3) Build.(i 1 + i 1 + i 1);
+  run (i 2) Build.(i 1 + i 1);
+  run exn Build.(loop (i 1 + (loop (i 2 + i 3))) * i 4);
+
+  let test_simplify expected expr =
+    if expected <> simplify expr then begin
+      had_errors := true;
+      Printf.printf "simplification test:\n  %s\n  =>\n  %s\n"
+        (show @@ expr)
+        (show @@ simplify expr)
+    end
+  in
+  test_simplify
+    (Calc_expr
+       (Calc.Int_expr
+          (Calc_int.BinOp
+             (Calc_int.Literal 1,
+              Calc_int.Add,
+              Calc_int.Literal 2))))
+    Build.(i 1 + i 2);
+  let nest x = (Calc_expr (Calc.Other x)) in
+  let nestc x = (Calc_expr (Calc.Int_expr (Calc_int.Other (Calc.Other x)))) in
+  test_simplify
+    (Calc_expr (Calc.Int_expr (Calc_int.Literal 10)))
+    (nest @@ nestc Build.(i 10));
 
   if !had_errors then
     print_endline "error: some tests failed";

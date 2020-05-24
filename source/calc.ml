@@ -97,43 +97,56 @@ and eval_bool eval_other expr =
   | Bool_value b -> b
   | _ -> failwith "expected bool"
 
-let simplify simplify expr =
+let rec simplify simplify_other expr =
+  let simplify = simplify simplify_other in
   let rec simplify_bool = function
-    | Calc_bool.Other (Bool_expr bexpr) -> simplify_bool bexpr
-    | Calc_bool.Other expr -> Calc_bool.Other (simplify expr)
+    | Calc_bool.Other expr ->
+      begin match simplify expr with
+        | Bool_expr bexpr -> bexpr
+        | expr -> Other expr
+      end
     | bexpr -> Calc_bool.simplify simplify_bool bexpr
   in
   let rec simplify_int = function
-    | Calc_int.Other (Int_expr iexpr) -> simplify_int iexpr
-    | Calc_int.Other expr -> Calc_int.Other (simplify expr)
+    | Calc_int.Other expr ->
+      begin match simplify expr with
+      | Int_expr iexpr -> iexpr
+      | expr -> Other expr
+      end
     | iexpr -> Calc_int.simplify simplify_int iexpr
   in
   let rec simplify_float = function
-    | Calc_float.Other (Float_expr fexpr) -> fexpr
-    | Calc_float.Other expr -> Calc_float.Other (simplify expr)
+    | Calc_float.Other expr ->
+      begin match simplify expr with
+        | Float_expr fexpr -> fexpr
+        | expr -> Other expr
+      end
     | fexpr -> Calc_float.simplify simplify_float fexpr
   in
   match expr with
-  (* | Bool_expr (Calc_bool.Other expr) ->
-   *   simplify expr *)
   | Bool_expr bexpr ->
-    Bool_expr (simplify_bool bexpr)
-  (* | Int_expr (Calc_int.Other expr) ->
-   *   simplify expr *)
+    begin match Calc_bool.simplify simplify_bool bexpr with
+      | Calc_bool.Other expr -> expr
+      | bexpr -> Bool_expr bexpr
+    end
   | Int_expr iexpr ->
-    Int_expr (simplify_int iexpr)
-  (* | Float_expr (Calc_float.Other expr) ->
-   *   simplify expr *)
-  | Float_expr bexpr ->
-    Float_expr (simplify_float bexpr)
+    begin match Calc_int.simplify simplify_int iexpr with
+      | Calc_int.Other expr -> expr
+      | iexpr -> Int_expr iexpr
+    end
+  | Float_expr fexpr ->
+    begin match Calc_float.simplify simplify_float fexpr with
+      | Calc_float.Other expr -> expr
+      | fexpr -> Float_expr fexpr
+    end
   | Comparison (lhs, op, rhs) ->
     Comparison (simplify lhs, op, simplify rhs)
   | To_int expr ->
     To_int (simplify expr)
   | To_float expr ->
     To_float (simplify expr)
-  | Other _ ->
-    expr
+  | Other oexpr ->
+    simplify_other (Other oexpr)
   | Error _ as e ->
     e
 

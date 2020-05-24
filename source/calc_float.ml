@@ -19,11 +19,12 @@ let rec eval eval_other = function
   | BinOp (lhs, op, rhs) -> (to_function op) (eval eval_other lhs) (eval eval_other rhs)
   | Other e -> eval_other e
 
-let simplify simplify (expr : _ t) =
+let rec simplify simplify_other (expr : _ t) =
+  let simplify = simplify simplify_other in
   match expr with
   | Literal _ -> expr
   | BinOp (lhs, op, rhs) -> BinOp (simplify lhs, op, simplify rhs)
-  | Other _ -> expr
+  | Other oexpr -> simplify_other (Other oexpr)
 
 module Build =
 struct
