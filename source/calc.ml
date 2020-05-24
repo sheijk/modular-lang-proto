@@ -97,30 +97,45 @@ and eval_bool eval_other expr =
   | Bool_value b -> b
   | _ -> failwith "expected bool"
 
-let rec simplify simplify_other expr =
-  let simplify = simplify simplify_other in
+let simplify simplify expr =
+  let rec simplify_bool = function
+    | Calc_bool.Other (Bool_expr bexpr) -> simplify_bool bexpr
+    | Calc_bool.Other expr -> Calc_bool.Other (simplify expr)
+    | bexpr -> Calc_bool.simplify simplify_bool bexpr
+  in
+  let rec simplify_int = function
+    | Calc_int.Other (Int_expr iexpr) -> simplify_int iexpr
+    | Calc_int.Other expr -> Calc_int.Other (simplify expr)
+    | iexpr -> Calc_int.simplify simplify_int iexpr
+  in
+  let rec simplify_float = function
+    | Calc_float.Other (Float_expr fexpr) -> fexpr
+    | Calc_float.Other expr -> Calc_float.Other (simplify expr)
+    | fexpr -> Calc_float.simplify simplify_float fexpr
+  in
   match expr with
-  | Bool_expr (Calc_bool.Other expr) ->
-    simplify expr
+  (* | Bool_expr (Calc_bool.Other expr) ->
+   *   simplify expr *)
   | Bool_expr bexpr ->
-    Bool_expr (Calc_bool.simplify bexpr)
-  | Int_expr (Calc_int.Other expr) ->
-    simplify expr
-  | Int_expr bexpr ->
-    Int_expr (Calc_int.simplify bexpr)
-  | Float_expr (Calc_float.Other expr) ->
-    simplify expr
+    Bool_expr (simplify_bool bexpr)
+  (* | Int_expr (Calc_int.Other expr) ->
+   *   simplify expr *)
+  | Int_expr iexpr ->
+    Int_expr (simplify_int iexpr)
+  (* | Float_expr (Calc_float.Other expr) ->
+   *   simplify expr *)
   | Float_expr bexpr ->
-    Float_expr (Calc_float.simplify bexpr)
+    Float_expr (simplify_float bexpr)
   | Comparison (lhs, op, rhs) ->
     Comparison (simplify lhs, op, simplify rhs)
   | To_int expr ->
     To_int (simplify expr)
   | To_float expr ->
     To_float (simplify expr)
-  | Other o ->
-    Other (simplify_other o)
-  | Error _ as e -> e
+  | Other _ ->
+    expr
+  | Error _ as e ->
+    e
 
 module Build =
 struct

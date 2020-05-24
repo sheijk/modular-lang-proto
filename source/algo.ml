@@ -107,11 +107,25 @@ let eval expr =
   | LoopBreakExn _ ->
     failwith "break called while not in loop"
 
-let rec simplify = function
+let rec simplify expr =
+  let rec simplify_calc (expr : t Calc.t) =
+    match expr with
+    | Calc.Other (Calc_expr expr) -> simplify_calc expr
+    | _ -> Calc.simplify simplify_calc expr
+  in
+  match expr with
   | Calc_expr (Calc.Other expr) ->
-    expr
+    simplify expr
   | Calc_expr cexpr ->
-    Calc_expr (Calc.simplify simplify cexpr)
+    Calc_expr (simplify_calc cexpr)
+  (* | Calc_expr (Calc.Bool_expr (Calc_bool.Other expr)) ->
+   *   Calc_expr (simplify_calc expr)
+   * | Calc_expr (Calc.Int_expr (Calc_int.Other expr)) ->
+   *   Calc_expr (simplify_calc expr)
+   * | Calc_expr (Calc.Float_expr (Calc_float.Other expr)) ->
+   *   Calc_expr (simplify_calc expr)
+   * | Calc_expr cexpr ->
+   *   Calc_expr (simplify_calc cexpr) *)
   | If_expr (cond, t, f) ->
     If_expr (simplify cond, simplify t, simplify f)
   | Loop e ->
@@ -197,10 +211,12 @@ let run expect expr =
       had_errors := not expected_result;
       Printf.sprintf "*exception %s*" str
   in
+
   let simple_expr = simplify expr in
   let simple_result = test simple_expr in
   let full_result = test expr in
   Printf.printf "Running\n  %s\n  => %s\n" (show simple_expr) (test expr);
+
   if not (String.equal simple_result full_result) then begin
     had_errors := true;
     Printf.printf "error: eval(simplify(expr)) != eval(expr), bug in simplify, full expr =\n";
