@@ -124,17 +124,9 @@ let rec simplify simplify_other expr =
 
 module Build =
 struct
-  let to_bool = function
-    | Bool_expr ie -> ie
-    | expr -> Calc_bool.Other expr
-
-  let to_int = function
-    | Int_expr ie -> ie
-    | expr -> Calc_int.Other expr
-
-  let to_float = function
-    | Float_expr fe -> fe
-    | expr -> Calc_float.Other expr
+  let to_bool expr = Calc_bool.Other expr
+  let to_int expr = Calc_int.Other expr
+  let to_float expr = Calc_float.Other expr
 
   let from_bool bexpr = Bool_expr bexpr
   let from_int iexpr = Int_expr iexpr

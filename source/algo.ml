@@ -124,18 +124,10 @@ let rec simplify = function
 
 module Build =
 struct
-  let to_bool = function
-    | Calc_expr (Calc.Bool_expr fexpr) -> fexpr
-    | expr -> Calc_bool.Other (Calc.Other expr)
-  let to_int = function
-    | Calc_expr (Calc.Int_expr fexpr) -> fexpr
-    | expr -> Calc_int.Other (Calc.Other expr)
-  let to_float = function
-    | Calc_expr (Calc.Float_expr fexpr) -> fexpr
-    | expr -> Calc_float.Other (Calc.Other expr)
-  let to_calc = function
-    | Calc_expr cexpr -> cexpr
-    | expr -> Calc.Other expr
+  let to_bool expr = Calc_bool.Other (Calc.Other expr)
+  let to_int expr = Calc_int.Other (Calc.Other expr)
+  let to_float expr = Calc_float.Other (Calc.Other expr)
+  let to_calc expr = Calc.Other expr
 
   let from_bool bexpr = Calc_expr (Calc.Bool_expr bexpr)
   let from_int iexpr = Calc_expr (Calc.Int_expr iexpr)
