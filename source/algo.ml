@@ -2,6 +2,12 @@
 module Type =
 struct
   type t = Int | Float | Bool | Error of string [@@deriving show]
+
+  let of_calc = function
+    | Calc.Type.Bool -> Float
+    | Calc.Type.Int -> Int
+    | Calc.Type.Float -> Float
+    | Calc.Type.Error msg -> Error msg
 end
 
 type t =
@@ -34,12 +40,7 @@ let equal_value l r =
 
 let rec type_of = function
   | Calc_expr expr ->
-    begin match Calc.type_of expr with
-      | Calc.Type.Bool -> Type.Float
-      | Calc.Type.Int -> Type.Int
-      | Calc.Type.Float -> Type.Float
-      | Calc.Type.Error msg -> Type.Error msg
-    end
+    Type.of_calc @@ Calc.type_of expr
   | If_expr (_, l, r) ->
     begin match (type_of l, type_of r) with
       | Int, Int -> Int
