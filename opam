@@ -16,4 +16,5 @@ depends: [
   "ppx_deriving" {>= "4.4.1"}
   "merlin"
   "ocp-indent"
+  "dune"
 ]
