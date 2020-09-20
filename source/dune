@@ -3,11 +3,12 @@
  (name Calc_languages)
  (preprocess (pps ppx_deriving.show))
  (modules Calc_int Calc_float Calc_bool Calc)
+ ; Don't put modules under Calc_languages module
  (wrapped false))
 
 (executable
- (preprocess (pps ppx_deriving.show))
  (name calc_demo)
+ (preprocess (pps ppx_deriving.show))
  (modules Calc_demo)
  (libraries Calc_languages))
 
@@ -16,11 +17,12 @@
  (preprocess (pps ppx_deriving.show))
  (modules Algo_int Algo)
  (libraries Calc_languages)
+ ; Don't put modules under Algo_languages module
  (wrapped false))
 
 (executable
- (preprocess (pps ppx_deriving.show))
  (name algo_demo)
+ (preprocess (pps ppx_deriving.show))
  (modules Algo_demo)
  (libraries Calc_languages Algo_languages))
 
