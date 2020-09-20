@@ -51,3 +51,9 @@ dune exec source/calc_demo.exe
 dune exec source/algo_demo.exe
 #+end_src
 
+** Build in Emacs
+
+- Open any .ml file
+- Call '(tuareg-opam-update-env)'
+- Run above build commands
+
