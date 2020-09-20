@@ -25,18 +25,7 @@ type value =
 
 exception LoopBreakExn of value
 
-let equal_value l r =
-  match (l, r) with
-  | Calc_value (Calc.Bool_value l), Calc_value (Calc.Bool_value r) ->
-    l = r
-  | Calc_value (Calc.Int_value l), Calc_value (Calc.Int_value r) ->
-    l = r
-  | Calc_value (Calc.Float_value l), Calc_value (Calc.Float_value r) ->
-    l = r
-  | Calc_value (Calc.Float_value _), Calc_value (Calc.Int_value _ | Calc.Bool_value _)
-  | Calc_value (Calc.Int_value _), Calc_value (Calc.Float_value _ | Calc.Bool_value _)
-  | Calc_value (Calc.Bool_value _), Calc_value (Calc.Float_value _ | Calc.Int_value _) ->
-    false
+let equal_value (Calc_value l) (Calc_value r) = Calc.equal_value l r
 
 let rec type_of = function
   | Calc_expr expr ->

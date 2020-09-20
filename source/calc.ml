@@ -28,6 +28,19 @@ type value =
   | Bool_value of bool
 [@@deriving show]
 
+let equal_value l r =
+  match (l, r) with
+  | (Bool_value l), (Bool_value r) ->
+    l = r
+  | (Int_value l), (Int_value r) ->
+    l = r
+  | (Float_value l), (Float_value r) ->
+    l = r
+  | (Float_value _), (Int_value _ | Bool_value _)
+  | (Int_value _), (Float_value _ | Bool_value _)
+  | (Bool_value _), (Float_value _ | Int_value _) ->
+    false
+
 let type_of = function
   | Int_expr _
   | To_int _ ->
