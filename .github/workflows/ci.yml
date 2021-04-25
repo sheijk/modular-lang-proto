@@ -15,13 +15,15 @@ jobs:
           - 4.10.1
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v2
-      - uses: avsm/setup-ocaml@v1
+      - name: Checkout source code
+        uses: actions/checkout@v2
+      - name: Use OCaml ${{ matrix.ocaml-version }}
+        uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
-      - run: opam --version
-      - run: opam install . --deps-only
-      - run: opam exec -- ocamlopt --version
-      - run: opam exec -- dune --version
-      - run: opam exec -- dune build
-      - run: opam exec -- dune test
+      - name: Install dependencies
+        run: opam install . --deps-only
+      - name: Build
+        run: opam exec -- dune build
+      - name: Run tests
+        run: opam exec -- dune test
