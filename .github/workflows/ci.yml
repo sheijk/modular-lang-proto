@@ -1,0 +1,17 @@
+
+name: opam-build-and-test
+on: [push]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: avsm/setup-ocaml@v1.1.10
+        with:
+          ocaml-version: "4.10.1"
+      - run: opam --version
+      - run: opam install . --deps-only
+      - run: opam exec -- ocamlopt --version
+      - run: opam exec -- dune --version
+      - run: opam exec -- dune build
+      - run: opam exec -- dune test
