@@ -21,10 +21,12 @@ jobs:
         uses: avsm/setup-ocaml@v1
         with:
           ocaml-version: ${{ matrix.ocaml-version }}
+      - name: Pin package
+        run: opam pin add modular-lang-proto.dev . --no-action
       - name: Install system dependencies
-        run: opam depext modular-lang-proto.dev --yes --with-doc --with-test
+        run: opam depext modular-lang-proto --yes --with-doc --with-test
       - name: Install dependencies
-        run: opam install modular-lang-proto --deps-only
+        run: opam install . --deps-only
       - name: Build
         run: opam exec -- dune build
       - name: Run tests
