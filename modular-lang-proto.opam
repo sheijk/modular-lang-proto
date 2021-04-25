@@ -7,10 +7,10 @@ version: "0.1"
 homepage: "https://github.com/sheijk/modular-lang-proto"
 bug-reports: "https://github.com/sheijk/modular-lang-proto/issues"
 dev-repo: "git+https://github.com/sheijk/modular-lang-proto.git"
-build: ["dune" "build" "source/algo_demo.exe source/calc_demo.exe"]
-# build-test: ["dune" "test"]
-# install: ["make" "install"]
-# remove: ["make" "uninstall"]
+build: ["dune" "build"]
+test: ["dune" "test"]
+install: ["dune" "install"]
+remove: ["dune" "uninstall"]
 depends: [
   "ocaml-base-compiler" {>= "4.10.0"}
   "ppx_deriving" {>= "4.4.1"}
