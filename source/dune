@@ -8,6 +8,7 @@
 
 (executable
  (name calc_demo)
+ (public_name calc-demo)
  (preprocess (pps ppx_deriving.show))
  (modules Calc_demo)
  (libraries Calc_languages))
@@ -22,6 +23,7 @@
 
 (executable
  (name algo_demo)
+ (public_name algo-demo)
  (preprocess (pps ppx_deriving.show))
  (modules Algo_demo)
  (libraries Calc_languages Algo_languages))
