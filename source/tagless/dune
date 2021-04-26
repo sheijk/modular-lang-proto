@@ -1,0 +1,7 @@
+
+(executable
+ (name Calc_int)
+ (public_name tagless-calc-demo)
+ (preprocess (pps ppx_deriving.show))
+ (modules Calc_int))
+
