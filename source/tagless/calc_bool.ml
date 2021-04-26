@@ -25,33 +25,3 @@ struct
 end
 let () = let module T : Lang = Eval in ()
 
-module Tests(L : Lang) =
-struct
-  let tests = L.[
-      true, bool true;
-      false, bool false;
-      true, (bool true && bool true);
-      false, (bool true && bool false);
-      true, (bool true || bool false);
-      true, (bool false || bool true);
-      false, (bool false || bool false);
-      true, (bool true && (bool true || bool false));
-      false, (bool true && bool false || bool false && bool true);
-    ]
-end
-
-let test() =
-  let module C = Tests(To_string) in
-  let module E = Tests(Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
-      if expected = result then
-        Printf.printf "ok  %s => %b\n" string result
-      else
-        Printf.printf "err %s => %b, expected %b\n" string result expected)
-    C.tests E.tests
-
-let () =
-  print_endline "hello, tagless Calc_bool";
-  test ()
-

@@ -31,7 +31,6 @@ jobs:
         run: opam exec -- dune build
       - name: Run tests
         run: opam exec -- dune test
-      - name: Run calc demo
-        run: opam exec -- dune exec source/calc_demo.exe
-      - name: Run algo demo
-        run: opam exec -- dune exec source/algo_demo.exe
+      - run: opam exec -- dune exec calc-demo
+      - run: opam exec -- dune exec algo-demo
+      - run: opam exec -- dune exec tagless-calc-demo

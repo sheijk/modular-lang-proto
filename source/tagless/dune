@@ -1,13 +1,14 @@
 
-(executable
- (name Calc_int)
- (public_name tagless-calc-int-demo)
+(library
+ (name Tagless_calc_languages)
  (preprocess (pps ppx_deriving.show))
- (modules Calc_int))
+ (modules Calc_int Calc_bool)
+ ; Don't put modules under Calc_languages module
+ (wrapped false))
 
 (executable
- (name Calc_bool)
- (public_name tagless-calc-bool-demo)
+ (name calc_demo)
+ (public_name tagless-calc-demo)
  (preprocess (pps ppx_deriving.show))
- (modules Calc_bool))
-
+ (modules Calc_demo)
+ (libraries Tagless_calc_languages))

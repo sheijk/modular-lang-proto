@@ -31,29 +31,3 @@ struct
 end
 let () = let module T : Lang = Eval in ()
 
-module Tests(L : Lang) =
-struct
-  let tests = L.[
-      3, int 1 + int 2;
-      1, int 1;
-      99, int 99;
-      106, int 100 + int 3 * int 2;
-      10, int 10 + int 9999;
-    ]
-end
-
-let test() =
-  let module C = Tests(To_string) in
-  let module E = Tests(Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
-      if expected = result then
-        Printf.printf "ok  %s => %d\n" string result
-      else
-        Printf.printf "err %s => %d, expected %d\n" string result expected)
-    C.tests E.tests
-
-let () =
-  print_endline "hello, tagless Calc_int";
-  test ()
-
