@@ -28,10 +28,10 @@ let () = let module T : Lang = To_string in ()
 
 module Eval =
 struct
-  type 'a t = unit -> 'a
+  include Eval_base.T
 
-  include Calc_bool.Eval'(struct type 'a t = unit -> 'a end)
-  include Calc_int.Eval'(struct type 'a t = unit -> 'a end)
+  include Calc_bool.Eval'(Eval_base.T)
+  include Calc_int.Eval'(Eval_base.T)
 
   let int_to_float value =
     fun () -> float_of_int (value())

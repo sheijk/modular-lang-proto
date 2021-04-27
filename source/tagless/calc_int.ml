@@ -24,7 +24,7 @@ module To_string = struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval'(T : sig type 'a t = unit -> 'a end) =
+module Eval'(T : Eval_base.I) =
 struct
   let int n : int T.t = fun () -> n
   let ( +. ) lhs rhs = fun () -> (lhs()) + (rhs())
@@ -35,8 +35,8 @@ end
 
 module Eval =
 struct
-  type 'a t = unit -> 'a
-  include Eval'(struct type 'a t = unit -> 'a end)
+  include Eval_base.T
+  include Eval'(Eval_base.T)
 end
 let () = let module T : Lang = Eval in ()
 
