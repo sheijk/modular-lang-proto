@@ -10,5 +10,6 @@
  (name calc_demo)
  (public_name tagless-calc-demo)
  (preprocess (pps ppx_deriving.show))
- (modules Calc_demo)
+ (modules Calc_demo Algo)
  (libraries Tagless_calc_languages))
+

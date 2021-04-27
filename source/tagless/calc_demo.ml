@@ -101,8 +101,67 @@ let test_combined () =
         Printf.printf "  err %s => %b, expected %b\n" string result expected)
     C.bool_tests E.bool_tests
 
+
+module Tests_algo(L : Algo.Lang) =
+struct
+  let int_tests =
+    let module Ci = Tests_int(L) in
+    Ci.tests @ L.[
+      1, int 1;
+      15, int 10 +. int 5;
+      123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+      (* 5, int 10 / int 2; *)
+      3, if_ (int 10 >. int 20) (int 666) (int 3);
+    ]
+
+  let bool_tests =
+    let module Cb = Tests_bool(L) in
+    Cb.tests @ L.[
+      true, bool true;
+      true, int 4 <. int 10;
+      false, int 4 >. int 10;
+      true, int 3 =. int 3;
+      false, int 3 =. int 4;
+      true, int 3 >. int (-10);
+      false, int 3 >. int 3;
+
+      true, bool true || bool false;
+      false, bool true || bool false;
+      false, bool true && bool false;
+    ]
+
+  (* Float tests from ast/Calc *)
+  (*   run (i 8) Build.(to_i (f 8.)); *)
+  (*   run (i 74) Build.(to_i (f 64.) + i 10); *)
+  (*   run (f 8.) Build.(f 13. - f 5.); *)
+  (*   run (f 10.) Build.(to_f @@ i 8 + i 2); *)
+  (*   run (f 10.) Build.(f 8. + to_f (i 2)); *)
+  (*   run (f 24.) Build.(to_f (i 16) + f 8.); *)
+  (*   run (f 8.) Build.(f 3. + i 5); *)
+end
+
+let test_algo () =
+  print_endline "Testing Algo";
+  let module C = Tests_algo(Algo.To_string) in
+  let module E = Tests_algo(Algo.Eval) in
+  List.iter2 (fun (expected, string) (_, f) ->
+      let result = f() in
+      if expected = result then
+        Printf.printf "  ok %s => %d\n" string result
+      else
+        Printf.printf "  err %s => %d, expected %d\n" string result expected)
+    C.int_tests E.int_tests;
+  List.iter2 (fun (expected, string) (_, f) ->
+      let result = f() in
+      if expected = result then
+        Printf.printf "  ok %s => %b\n" string result
+      else
+        Printf.printf "  err %s => %b, expected %b\n" string result expected)
+    C.bool_tests E.bool_tests
+
 let () =
   print_endline "hello, tagless Calc";
   test_bool ();
   test_int ();
-  test_combined ()
+  test_combined ();
+  test_algo ()
