@@ -51,14 +51,18 @@ let test_bool () =
 
 module Tests_combined(L : Calc.Lang) =
 struct
-  let int_tests = L.[
+  let int_tests =
+    let module Ci = Tests_int(L) in
+    Ci.tests @ L.[
       1, int 1;
       15, int 10 +. int 5;
       123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
       (* 5, int 10 / int 2; *)
     ]
 
-  let bool_tests = L.[
+  let bool_tests =
+    let module Cb = Tests_bool(L) in
+    Cb.tests @ L.[
       true, bool true;
       true, int 4 <. int 10;
       false, int 4 >. int 10;
@@ -105,8 +109,8 @@ let test_combined () =
 module Tests_algo(L : Algo.Lang) =
 struct
   let int_tests =
-    let module Ci = Tests_int(L) in
-    Ci.tests @ L.[
+    let module C = Tests_combined(L) in
+    C.int_tests @ L.[
       1, int 1;
       15, int 10 +. int 5;
       123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
@@ -115,8 +119,8 @@ struct
     ]
 
   let bool_tests =
-    let module Cb = Tests_bool(L) in
-    Cb.tests @ L.[
+    let module C = Tests_combined(L) in
+    C.bool_tests @ L.[
       true, bool true;
       true, int 4 <. int 10;
       false, int 4 >. int 10;
@@ -126,7 +130,7 @@ struct
       false, int 3 >. int 3;
 
       true, bool true || bool false;
-      false, bool true || bool false;
+      true, bool true || bool false;
       false, bool true && bool false;
     ]
 
