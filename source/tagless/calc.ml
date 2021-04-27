@@ -19,9 +19,9 @@ sig
 
   val int_to_float : int t -> float t
   val float_to_int : float t -> int t
-  val int_equal : int t -> int t -> bool t
-  val int_less : int t -> int t -> bool t
-  val int_greater : int t -> int t -> bool t
+  val ( =. ) : int t -> int t -> bool t
+  val ( <. ) : int t -> int t -> bool t
+  val ( >. ) : int t -> int t -> bool t
 end
 
 module To_string =
@@ -32,9 +32,9 @@ struct
 
   let int_to_float = Printf.sprintf "(int_to_float %s)"
   let float_to_int = Printf.sprintf "(float_to_int %s)"
-  let int_equal = Printf.sprintf "(int_equal %s %s)"
-  let int_less = Printf.sprintf "(int_less %s %s)"
-  let int_greater = Printf.sprintf "(int_greater %s %s)"
+  let ( =. ) = Printf.sprintf "(int_equal %s %s)"
+  let ( <. ) = Printf.sprintf "(int_less %s %s)"
+  let ( >. ) = Printf.sprintf "(int_greater %s %s)"
 end
 let () = let module T : Lang = To_string in ()
 
@@ -64,17 +64,15 @@ struct
   include Calc_bool.Eval'(struct type 'a t = unit -> 'a end)
   include Calc_int.Eval'(struct type 'a t = unit -> 'a end)
 
-  let error message = failwith message
-
   let int_to_float value =
     fun () -> float_of_int (value())
 
   let float_to_int value =
     fun () -> int_of_float (value())
 
-  let int_equal lhs rhs = fun () -> (lhs()) = (rhs())
-  let int_less lhs rhs = fun () -> (lhs()) < (rhs())
-  let int_greater lhs rhs = fun () -> (lhs()) > (rhs())
+  let ( =. ) lhs rhs = fun () -> (lhs()) = (rhs())
+  let ( <. ) lhs rhs = fun () -> (lhs()) < (rhs())
+  let ( >. ) lhs rhs = fun () -> (lhs()) > (rhs())
 end
 let () = let module T : Lang = Eval in ()
 
