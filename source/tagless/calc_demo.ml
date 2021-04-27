@@ -2,10 +2,10 @@
 module Tests_int(L : Calc_int.Lang) =
 struct
   let tests = L.[
-      3, int 1 + int 2;
+      3, int 1 +. int 2;
       1, int 1;
       99, int 99;
-      106, int 100 + int 3 * int 2;
+      106, int 100 +. int 3 *. int 2;
     ]
 end
 
@@ -53,8 +53,8 @@ module Tests_combined(L : Calc.Lang) =
 struct
   let int_tests = L.[
       1, int 1;
-      15, int 10 + int 5;
-      123, (int 1 * int 10 + int 2) * int 10 + int 3;
+      15, int 10 +. int 5;
+      123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
       (* 5, int 10 / int 2; *)
     ]
 
@@ -68,7 +68,7 @@ struct
       false, int 3 >. int 3;
 
       true, bool true || bool false;
-      false, bool true || bool false;
+      false, bool false || bool false;
       false, bool true && bool false;
     ]
 
