@@ -10,8 +10,8 @@ end
 module To_string'(T : sig type 'a t = string end) =
 struct
   let bool b : bool T.t = if b then "true" else "false"
-  let ( && ) lhs rhs = Printf.sprintf "(%s and %s)" lhs rhs
-  let ( || ) lhs rhs = Printf.sprintf "(%s or %s)" lhs rhs
+  let ( && ) lhs rhs = Printf.sprintf "(%s && %s)" lhs rhs
+  let ( || ) lhs rhs = Printf.sprintf "(%s || %s)" lhs rhs
 end
 
 module To_string = struct

@@ -20,9 +20,9 @@ struct
 
   let int_to_float = Printf.sprintf "(int_to_float %s)"
   let float_to_int = Printf.sprintf "(float_to_int %s)"
-  let ( =. ) = Printf.sprintf "(int_equal %s %s)"
-  let ( <. ) = Printf.sprintf "(int_less %s %s)"
-  let ( >. ) = Printf.sprintf "(int_greater %s %s)"
+  let ( =. ) = Printf.sprintf "(%s =. %s)"
+  let ( <. ) = Printf.sprintf "(%s <. %s)"
+  let ( >. ) = Printf.sprintf "(%s >. %s)"
 end
 let () = let module T : Lang = To_string in ()
 

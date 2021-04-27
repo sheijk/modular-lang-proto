@@ -12,10 +12,10 @@ end
 module To_string'(T : sig type 'a t = string end) =
 struct
   let int : int -> int T.t = string_of_int
-  let ( +. ) lhs rhs = Printf.sprintf "(%s + %s)" lhs rhs
-  let ( -. ) lhs rhs = Printf.sprintf "(%s - %s)" lhs rhs
-  let ( *. ) lhs rhs = Printf.sprintf "(%s * %s)" lhs rhs
-  let ( /. ) lhs rhs = Printf.sprintf "(%s / %s)" lhs rhs
+  let ( +. ) lhs rhs = Printf.sprintf "(%s +. %s)" lhs rhs
+  let ( -. ) lhs rhs = Printf.sprintf "(%s -. %s)" lhs rhs
+  let ( *. ) lhs rhs = Printf.sprintf "(%s *. %s)" lhs rhs
+  let ( /. ) lhs rhs = Printf.sprintf "(%s /. %s)" lhs rhs
 end
 
 module To_string = struct
