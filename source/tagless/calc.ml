@@ -34,13 +34,13 @@ struct
   include Calc_int.Eval'(Eval_base.T)
 
   let int_to_float value =
-    fun () -> float_of_int (value())
+    fun ctx -> float_of_int (value ctx)
 
   let float_to_int value =
-    fun () -> int_of_float (value())
+    fun ctx -> int_of_float (value ctx)
 
-  let ( =. ) lhs rhs = fun () -> (lhs()) = (rhs())
-  let ( <. ) lhs rhs = fun () -> (lhs()) < (rhs())
-  let ( >. ) lhs rhs = fun () -> (lhs()) > (rhs())
+  let ( =. ) lhs rhs = fun ctx -> (lhs ctx) = (rhs ctx)
+  let ( <. ) lhs rhs = fun ctx -> (lhs ctx) < (rhs ctx)
+  let ( >. ) lhs rhs = fun ctx -> (lhs ctx) > (rhs ctx)
 end
 let () = let module T : Lang = Eval in ()

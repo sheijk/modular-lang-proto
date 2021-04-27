@@ -27,7 +27,7 @@ let test_int() =
   let module C = Tests_int(Calc_int.To_string) in
   let module E = Tests_int(Calc_int.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context()) in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
       else begin
@@ -56,7 +56,7 @@ let test_bool () =
   let module C = Tests_bool(Calc_bool.To_string) in
   let module E = Tests_bool(Calc_bool.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context ()) in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
       else begin
@@ -108,7 +108,7 @@ let test_combined () =
   let module C = Tests_combined(Calc.To_string) in
   let module E = Tests_combined(Calc.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context ()) in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
       else begin
@@ -117,7 +117,7 @@ let test_combined () =
       end)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context ()) in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
       else begin
@@ -170,7 +170,7 @@ let test_algo () =
   let module C = Tests_algo(Algo.To_string) in
   let module E = Tests_algo(Algo.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context ()) in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
       else begin
@@ -179,7 +179,7 @@ let test_algo () =
       end)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f() in
+      let result = f (Eval_base.new_context ()) in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
       else begin

@@ -26,11 +26,11 @@ let () = let module T : Lang = To_string in ()
 
 module Eval'(T : Eval_base.I) =
 struct
-  let int n : int T.t = fun () -> n
-  let ( +. ) lhs rhs = fun () -> (lhs()) + (rhs())
-  let ( -. ) lhs rhs = fun () -> (lhs()) - (rhs())
-  let ( *. ) lhs rhs = fun () -> (lhs()) * (rhs())
-  let ( /. ) lhs rhs = fun () -> (lhs()) / (rhs())
+  let int n : int T.t = fun _ -> n
+  let ( +. ) lhs rhs = fun ctx -> (lhs ctx) + (rhs ctx)
+  let ( -. ) lhs rhs = fun ctx -> (lhs ctx) - (rhs ctx)
+  let ( *. ) lhs rhs = fun ctx -> (lhs ctx) * (rhs ctx)
+  let ( /. ) lhs rhs = fun ctx -> (lhs ctx) / (rhs ctx)
 end
 
 module Eval =

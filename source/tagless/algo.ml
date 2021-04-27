@@ -20,11 +20,11 @@ module Eval =
 struct
   include Calc.Eval
 
-  let if_ condition true_ false_ = fun () ->
-    if (condition()) then
-      true_()
+  let if_ condition true_ false_ = fun ctx ->
+    if (condition ctx) then
+      true_ ctx
     else
-      false_()
+      false_ ctx
 end
 let () = let module T : Lang = Eval in ()
 

@@ -22,9 +22,9 @@ let () = let module T : Lang = To_string in ()
 
 module Eval'(T : Eval_base.I) =
 struct
-  let bool b : bool T.t = fun () -> b
-  let ( && ) lhs rhs = fun () -> ((lhs()) && (rhs()))
-  let ( || ) lhs rhs = fun () -> ((lhs()) || (rhs()))
+  let bool b : bool T.t = fun _ -> b
+  let ( && ) lhs rhs = fun ctx -> ((lhs ctx) && (rhs ctx))
+  let ( || ) lhs rhs = fun ctx -> ((lhs ctx) || (rhs ctx))
 end
 
 module Eval =
