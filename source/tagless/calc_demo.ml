@@ -1,4 +1,17 @@
 
+module Status : sig
+  val log_test_failure : unit -> unit
+  val finish : unit -> unit
+end = struct
+  let errors = ref 0
+  let log_test_failure() = incr errors
+  let finish () =
+    if ((!errors) > 0) then begin
+      Printf.printf "%d tests failed\n" (!errors);
+      exit 1;
+    end
+end
+
 module Tests_int(L : Calc_int.Lang) =
 struct
   let tests = L.[
@@ -17,8 +30,10 @@ let test_int() =
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
-      else
-        Printf.printf "  err %s => %d, expected %d\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %d, expected %d\n" string result expected;
+      end)
     C.tests E.tests
 
 module Tests_bool(L : Calc_bool.Lang) =
@@ -44,8 +59,10 @@ let test_bool () =
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
-      else
-        Printf.printf "  err %s => %b, expected %b\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %b, expected %b\n" string result expected;
+      end)
     C.tests E.tests
 
 
@@ -94,15 +111,19 @@ let test_combined () =
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
-      else
-        Printf.printf "  err %s => %d, expected %d\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %d, expected %d\n" string result expected;
+      end)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
-      else
-        Printf.printf "  err %s => %b, expected %b\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %b, expected %b\n" string result expected;
+      end)
     C.bool_tests E.bool_tests
 
 
@@ -152,15 +173,19 @@ let test_algo () =
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
-      else
-        Printf.printf "  err %s => %d, expected %d\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %d, expected %d\n" string result expected;
+      end)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f() in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
-      else
-        Printf.printf "  err %s => %b, expected %b\n" string result expected)
+      else begin
+        Status.log_test_failure();
+        Printf.printf "  err %s => %b, expected %b\n" string result expected;
+      end)
     C.bool_tests E.bool_tests
 
 let () =
@@ -168,4 +193,6 @@ let () =
   test_bool ();
   test_int ();
   test_combined ();
-  test_algo ()
+  test_algo ();
+  Status.finish ()
+
