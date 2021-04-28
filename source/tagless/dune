@@ -2,7 +2,7 @@
 (library
  (name Tagless_calc_languages)
  (preprocess (pps ppx_deriving.show))
- (modules Calc_int Calc_bool)
+ (modules Calc_int Calc_bool Calc)
  ; Don't put modules under Calc_languages module
  (wrapped false))
 
