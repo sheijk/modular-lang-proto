@@ -19,13 +19,10 @@ ocamlPackages.buildDunePackage rec {
   src = ./.;
 
   buildInputs = with ocamlPackages; [
-    # dune_2
     ppx_deriving
     ppxlib
-  # "ppx_deriving" {>= "4.4.1"}
-  # "merlin"
-  # "ocp-indent"
-  # "dune"
+    merlin
+    ocp-indent
   ];
 }
 
