@@ -131,61 +131,63 @@ module Tests_algo(L : Algo.Lang) =
 struct
   let int_tests =
     let module C = Tests_combined(L) in
-    C.int_tests @ L.[
-      1, int 1;
-      15, int 10 +. int 5;
-      123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
-      (* 5, int 10 / int 2; *)
-      3, if_ (int 10 >. int 20) (int 666) (int 3);
-    ]
+    List.map (fun (x, t) -> Some x, t) C.int_tests
+    @ L.[
+        Some 10, int 3 +. int 7;
+        (* 5, int 10 / int 2; *)
+        Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
+        (* *   run exn Build.(loop (i 0)); *)
+        (* *   run exn Build.(break (i 3)); *)
+        Some 10, (loop (break_if (int 10)));
+        (* 11, (loop (cond (index >. int 10) (break index) (int 1))); *)
+        None, loop (int 1);
+      ]
 
   let bool_tests =
     let module C = Tests_combined(L) in
-    C.bool_tests @ L.[
-      true, bool true;
-      true, int 4 <. int 10;
-      false, int 4 >. int 10;
-      true, int 3 =. int 3;
-      false, int 3 =. int 4;
-      true, int 3 >. int (-10);
-      false, int 3 >. int 3;
-
-      true, bool true || bool false;
-      true, bool true || bool false;
-      false, bool true && bool false;
+    List.map (fun (x, t) -> Some x, t) C.bool_tests
+    @ L.[
+      Some true, bool true;
+      (* true, int 1 =. loop (int 1); *)
     ]
 
-  (* Float tests from ast/Calc *)
-  (*   run (i 8) Build.(to_i (f 8.)); *)
-  (*   run (i 74) Build.(to_i (f 64.) + i 10); *)
-  (*   run (f 8.) Build.(f 13. - f 5.); *)
-  (*   run (f 10.) Build.(to_f @@ i 8 + i 2); *)
-  (*   run (f 10.) Build.(f 8. + to_f (i 2)); *)
-  (*   run (f 24.) Build.(to_f (i 16) + f 8.); *)
-  (*   run (f 8.) Build.(f 3. + i 5); *)
+ (* *   run (i 2) Build.(cond (i 0) (i 1) (i 2));
+  * *   run (i 1) Build.(cond (i 1) (i 1) (i 2));
+  * *   run (i 22) Build.(cond (i 1 - i 1) (i 1 + i 10) (i 2 + i 20));
+  * *   run (i 11) Build.(cond (f 2. - f 1.) (i 1 + i 10) (i 2 + i 20));
+  * *   run (i 1) Build.(cond (b true) (i 1) (i 999)); *)
 end
 
 let test_algo () =
   print_endline "Testing Algo";
+  let fail testcase expected result =
+    Status.log_test_failure();
+    Printf.printf "  err %s => %s, expected %s\n" testcase result expected;
+  in
+  let ok testcase result =
+    Printf.printf "  ok %s => %s\n" testcase result
+  in
+  let to_result_str f opt =
+    Option.value ~default:"error" @@ Option.map f opt
+  in
+  let run string expected f to_string =
+    let result =
+      try Some (f (Eval_base.new_context ()))
+      with _ -> None
+    in
+    let to_result_str = to_result_str to_string in
+    if Option.equal (=) expected result then
+      ok string (to_result_str result)
+    else
+      fail string (to_result_str expected) (to_result_str result)
+  in
   let module C = Tests_algo(Algo.To_string) in
   let module E = Tests_algo(Algo.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %d\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %d, expected %d\n" string result expected;
-      end)
+      run string expected f string_of_int)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %b\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %b, expected %b\n" string result expected;
-      end)
+      run string expected f string_of_bool)
     C.bool_tests E.bool_tests
 
 let () =
