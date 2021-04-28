@@ -6,7 +6,7 @@ sig
 
   val if_ : bool t -> int t -> int t -> int t
   val loop : int t -> int t
-  val break_if : int t -> int t
+  val break : int t -> int t
   val loop_index : unit -> int t
 end
 
@@ -19,7 +19,7 @@ struct
 
   let loop body =
     Printf.sprintf "(loop %s)" body
-  let break_if condition =
+  let break condition =
     Printf.sprintf "(break_if %s)" condition
   let loop_index () =
     Printf.sprintf "index"
@@ -50,7 +50,7 @@ struct
     with Loop_break i ->
       i
 
-  let break_if value = fun ctx ->
+  let break value = fun ctx ->
     raise (Loop_break (value ctx))
 
   let loop_index () = function

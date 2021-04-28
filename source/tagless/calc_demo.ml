@@ -138,7 +138,7 @@ struct
         Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
         (* *   run exn Build.(loop (i 0)); *)
         (* *   run exn Build.(break (i 3)); *)
-        Some 10, (loop (break_if (int 10)));
+        Some 10, (loop (break (int 10)));
         (* 11, (loop (cond (index >. int 10) (break index) (int 1))); *)
         None, loop (int 1);
       ]
