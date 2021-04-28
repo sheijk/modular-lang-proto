@@ -17,11 +17,11 @@ sig
   include Calc_int.Lang with type 'a t := 'a t
   include Calc_bool.Lang with type 'a t := 'a t
 
-  val to_float : 'a t -> float t
-  val to_int : 'a t -> int t
-  val equal : 'a t -> bool t
-  val less : 'a t -> bool t
-  val greater : 'a t -> bool t
+  val int_to_float : int t -> float t
+  val float_to_int : float t -> int t
+  val int_equal : int t -> int t -> bool t
+  val int_less : int t -> int t -> bool t
+  val int_greater : int t -> int t -> bool t
 end
 
 module To_string =
@@ -30,11 +30,11 @@ struct
   include Calc_int.To_string'(struct type 'a t = string end)
   include Calc_bool.To_string'(struct type 'a t = string end)
 
-  let to_float = Printf.sprintf "(to_float %s)"
-  let to_int = Printf.sprintf "(to_int %s)"
-  let equal = Printf.sprintf "(equal %s)"
-  let less = Printf.sprintf "(less %s)"
-  let greater = Printf.sprintf "(greater %s)"
+  let int_to_float = Printf.sprintf "(int_to_float %s)"
+  let float_to_int = Printf.sprintf "(float_to_int %s)"
+  let int_equal = Printf.sprintf "(int_equal %s %s)"
+  let int_less = Printf.sprintf "(int_less %s %s)"
+  let int_greater = Printf.sprintf "(int_greater %s %s)"
 end
 let () = let module T : Lang = To_string in ()
 
@@ -57,74 +57,26 @@ let equal_value l r =
   | (Bool_value _), (Float_value _ | Int_value _) ->
     false
 
-(* let rec eval eval_other = function
- *   | Int_expr expr ->
- *     Int_value (Calc_int.eval (eval_int eval_other) expr)
- *   | Float_expr expr ->
- *     Float_value (Calc_float.eval (eval_float eval_other) expr)
- *   | Bool_expr expr ->
- *     Bool_value (Calc_bool.eval (eval_bool eval_other) expr)
- *   | To_float iexpr ->
- *     begin match eval eval_other iexpr with
- *       | Int_value i ->
- *         Float_value (Float.of_int i)
- *       | Float_value _ as fv ->
- *         fv
- *       | Bool_value b ->
- *         Float_value (if b then 1.0 else 0.0)
- *     end
- *   | To_int fexpr ->
- *     begin match eval eval_other fexpr with
- *       | Float_value f ->
- *         Int_value (Float.to_int f)
- *       | Int_value _ as iv ->
- *         iv
- *       | Bool_value b ->
- *         Int_value (if b then 1 else 0)
- *     end
- *   | Comparison (lhs, op, rhs) ->
- *     begin match (eval eval_other lhs, eval eval_other rhs) with
- *       | Int_value lhs, Int_value rhs ->
- *         Bool_value ((comparison_function op) lhs rhs)
- *       | Float_value lhs, Float_value rhs ->
- *         Bool_value ((comparison_function op) lhs rhs)
- *       | _ ->
- *         failwith "Comparison needs two numeric parameters of the same type"
- *     end
- *   | Other expr ->
- *     eval_other expr
- *   | Error str ->
- *     failwith str
- * 
- * and eval_float eval_other expr =
- *   match eval eval_other expr with
- *   | Float_value f -> f
- *   | _ -> failwith "expected float"
- * 
- * and eval_int eval_other expr =
- *   match eval eval_other expr with
- *   | Int_value i -> i
- *   | _ -> failwith "expected int"
- * 
- * and eval_bool eval_other expr =
- *   match eval eval_other expr with
- *   | Bool_value b -> b
- *   | _ -> failwith "expected bool" *)
+module Eval =
+struct
+  type 'a t = unit -> 'a
 
-(* let type_of = function
- *   | Int_expr _
- *   | To_int _ ->
- *     Type.Int
- *   | Float_expr _
- *   | To_float _ ->
- *     Type.Float
- *   | Bool_expr _
- *   | Comparison _ ->
- *     Type.Bool
- *   | Other _ ->
- *     Type.Error "invalid embedded type"
- *   | Error msg ->
- *     Type.Error msg *)
+  include Calc_bool.Eval'(struct type 'a t = unit -> 'a end)
+  include Calc_int.Eval'(struct type 'a t = unit -> 'a end)
+
+  let error message = failwith message
+
+  let int_to_float value =
+    fun () -> float_of_int (value())
+
+  let float_to_int value =
+    fun () -> int_of_float (value())
+
+  let int_equal lhs rhs = fun () -> (lhs()) = (rhs())
+  let int_less lhs rhs = fun () -> (lhs()) < (rhs())
+  let int_greater lhs rhs = fun () -> (lhs()) > (rhs())
+end
+let () = let module T : Lang = Eval in ()
 
 (* module Build =
  * struct
