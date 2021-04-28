@@ -13,22 +13,22 @@ let comparison_function = function
 
 module type Lang =
 sig
-  type t
-  include Calc_int.Lang with type t := t
-  include Calc_bool.Lang with type t := t
+  type 'a t
+  include Calc_int.Lang with type 'a t := 'a t
+  include Calc_bool.Lang with type 'a t := 'a t
 
-  val to_float : t -> t
-  val to_int : t -> t
-  val equal : t -> t
-  val less : t -> t
-  val greater : t -> t
+  val to_float : 'a t -> float t
+  val to_int : 'a t -> int t
+  val equal : 'a t -> bool t
+  val less : 'a t -> bool t
+  val greater : 'a t -> bool t
 end
 
 module To_string =
 struct
-  type t = string
-  include Calc_int.To_string'(struct type t = string end)
-  include Calc_bool.To_string'(struct type t = string end)
+  type 'a t = string
+  include Calc_int.To_string'(struct type 'a t = string end)
+  include Calc_bool.To_string'(struct type 'a t = string end)
 
   let to_float = Printf.sprintf "(to_float %s)"
   let to_int = Printf.sprintf "(to_int %s)"
