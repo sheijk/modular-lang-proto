@@ -20,7 +20,7 @@ let test_int() =
         Printf.printf "err %s => %d, expected %d\n" string result expected)
     C.tests E.tests
 
-module Tests(L : Calc_bool.Lang) =
+module Tests_bool(L : Calc_bool.Lang) =
 struct
   let tests = L.[
       true, bool true;
@@ -36,8 +36,8 @@ struct
 end
 
 let test_bool () =
-  let module C = Tests(Calc_bool.To_string) in
-  let module E = Tests(Calc_bool.Eval) in
+  let module C = Tests_bool(Calc_bool.To_string) in
+  let module E = Tests_bool(Calc_bool.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f() in
       if expected = result then
