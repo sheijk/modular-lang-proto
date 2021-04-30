@@ -33,7 +33,7 @@ let run string expected f to_string =
   else
     fail string (to_result_str expected) (to_result_str result)
 
-module Tests_int(L : Calc_int.Lang) =
+module Tests_int(L : Calc_int.Layer.Lang) =
 struct
   let tests = L.[
       3, int 1 +. int 2;
@@ -45,8 +45,8 @@ end
 
 let test_int() =
   print_endline "Testing Calc_int";
-  let module C = Tests_int(Calc_int.To_string) in
-  let module E = Tests_int(Calc_int.Eval) in
+  let module C = Tests_int(Calc_int.Full.To_string) in
+  let module E = Tests_int(Calc_int.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f (Eval_base.new_context()) in
       if expected = result then
@@ -57,7 +57,7 @@ let test_int() =
       end)
     C.tests E.tests
 
-module Tests_bool(L : Calc_bool.Lang) =
+module Tests_bool(L : Calc_bool.Layer.Lang) =
 struct
   let tests = L.[
       true, bool true;
@@ -74,8 +74,8 @@ end
 
 let test_bool () =
   print_endline "Testing Calc_bool";
-  let module C = Tests_bool(Calc_bool.To_string) in
-  let module E = Tests_bool(Calc_bool.Eval) in
+  let module C = Tests_bool(Calc_bool.Full.To_string) in
+  let module E = Tests_bool(Calc_bool.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f (Eval_base.new_context ()) in
       if expected = result then
@@ -87,7 +87,7 @@ let test_bool () =
     C.tests E.tests
 
 
-module Tests_combined(L : Calc.Lang) =
+module Tests_combined(L : Calc.Layer.Lang) =
 struct
   let int_tests =
     let module Ci = Tests_int(L) in
@@ -126,8 +126,8 @@ end
 
 let test_combined () =
   print_endline "Testing Calc";
-  let module C = Tests_combined(Calc.To_string) in
-  let module E = Tests_combined(Calc.Eval) in
+  let module C = Tests_combined(Calc.Full.To_string) in
+  let module E = Tests_combined(Calc.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       let result = f (Eval_base.new_context ()) in
       if expected = result then
@@ -151,8 +151,8 @@ let test_combined () =
 module type Algo_calc =
 sig
   type 'a t
-  include Calc.Lang with type 'a t := 'a t
-  include Algo.Lang with type 'a t := 'a t
+  include Calc.Layer.Lang with type 'a t := 'a t
+  include Algo.Layer.Lang with type 'a t := 'a t
 end
 
 module Tests_algo(L : Algo_calc) =
@@ -187,8 +187,8 @@ end
 
 let test_algo () =
   print_endline "Testing Algo";
-  let module C = Tests_algo(Algo.To_string) in
-  let module E = Tests_algo(Algo.Eval) in
+  let module C = Tests_algo(Algo.Full.To_string) in
+  let module E = Tests_algo(Algo.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       run string expected f string_of_int)
     C.int_tests E.int_tests;
@@ -200,20 +200,20 @@ module Algo_bool =
 struct
   module type Lang = sig
     type 'a t
-    include Algo.Lang with type 'a t := 'a t
-    include Calc_bool.Lang with type 'a t := 'a t
+    include Algo.Layer.Lang with type 'a t := 'a t
+    include Calc_bool.Layer.Lang with type 'a t := 'a t
   end
 
   module To_string = struct
     type 'a t = string
-    include Calc_bool.To_string'(struct type 'a t = string end)
-    include Algo.To_string'
+    include Calc_bool.Layer.To_string
+    include Algo.Layer.To_string
   end
 
   module Eval = struct
     include Eval_base.T
-    include Calc_bool.Eval'(Eval_base.T)
-    include Algo.Eval'
+    include Calc_bool.Layer.Eval
+    include Algo.Layer.Eval
   end
 end
 

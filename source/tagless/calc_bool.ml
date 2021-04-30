@@ -1,4 +1,6 @@
 
+module Layer =
+struct
 module type Lang =
 sig
   type 'a t
@@ -7,30 +9,39 @@ sig
   val ( || ) : bool t -> bool t -> bool t
 end
 
-module To_string'(T : sig type 'a t = string end) =
+module To_string =
 struct
-  let bool b : bool T.t = if b then "true" else "false"
+  let bool b = if b then "true" else "false"
   let ( && ) lhs rhs = Printf.sprintf "(%s && %s)" lhs rhs
   let ( || ) lhs rhs = Printf.sprintf "(%s || %s)" lhs rhs
 end
 
-module To_string = struct
-  type 'a t = string
-  include To_string'(struct type 'a t = string end)
-end
-let () = let module T : Lang = To_string in ()
-
-module Eval'(T : Eval_base.I) =
+module Eval =
 struct
-  let bool b : bool T.t = fun _ -> b
+  let bool b = fun _ -> b
   let ( && ) lhs rhs = fun ctx -> ((lhs ctx) && (rhs ctx))
   let ( || ) lhs rhs = fun ctx -> ((lhs ctx) || (rhs ctx))
 end
-
-module Eval =
-struct
-  include Eval_base.T
-  include Eval'(Eval_base.T)
 end
-let () = let module T : Lang = Eval in ()
 
+module Full =
+struct
+  module type Lang =
+  sig
+    include Layer.Lang
+  end
+
+  module To_string =
+  struct
+    type 'a t = string
+    include Layer.To_string
+  end
+  let () = let module T : Lang = To_string in ()
+
+  module Eval =
+  struct
+    include Eval_base.T
+    include Layer.Eval
+  end
+  let () = let module T : Lang = Eval in ()
+end

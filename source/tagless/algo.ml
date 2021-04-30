@@ -1,4 +1,6 @@
 
+module Layer =
+struct
 module type Lang =
 sig
   type 'a t
@@ -9,7 +11,7 @@ sig
   val loop_index : unit -> int t
 end
 
-module To_string' =
+module To_string =
 struct
   let if_ condition true_ false_ =
     Printf.sprintf "(if %s then %s else %s)" condition true_ false_
@@ -22,14 +24,7 @@ struct
     Printf.sprintf "index"
 end
 
-module To_string =
-struct
-  include To_string'
-  include Calc.To_string
-end
-let () = let module T : Lang = To_string in ()
-
-module Eval' =
+module Eval =
 struct
   exception Loop_break of int
 
@@ -55,16 +50,28 @@ struct
     raise (Loop_break (value ctx))
 
   let loop_index () = function
-      | { Eval_base.index = Some index } ->
-        index
-      | { Eval_base.index = None } ->
-        failwith "index used outside of loop"
+    | { Eval_base.index = Some index } ->
+      index
+    | { Eval_base.index = None } ->
+      failwith "index used outside of loop"
+end
 end
 
-module Eval =
+module Full =
 struct
-  include Calc.Eval
-  include Eval'
-end
+  module To_string =
+  struct
+    type 'a t = string
+    include Calc.Layer.To_string
+    include Layer.To_string
+  end
+  let () = let module T : Layer.Lang = To_string in ()
 
-let () = let module T : Lang = Eval in ()
+  module Eval =
+  struct
+    include Eval_base.T
+    include Calc.Layer.Eval
+    include Layer.Eval
+  end
+  let () = let module T : Layer.Lang = Eval in ()
+end
