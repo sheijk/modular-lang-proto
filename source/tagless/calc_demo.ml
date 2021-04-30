@@ -12,6 +12,27 @@ end = struct
     end
 end
 
+let fail testcase expected result =
+  Status.log_test_failure();
+  Printf.printf "  err %s => %s, expected %s\n" testcase result expected
+
+let ok testcase result =
+  Printf.printf "  ok %s => %s\n" testcase result
+
+let to_result_str f opt =
+  Option.value ~default:"error" @@ Option.map f opt
+
+let run string expected f to_string =
+  let result =
+    try Some (f (Eval_base.new_context ()))
+    with _ -> None
+  in
+  let to_result_str = to_result_str to_string in
+  if Option.equal (=) expected result then
+    ok string (to_result_str result)
+  else
+    fail string (to_result_str expected) (to_result_str result)
+
 module Tests_int(L : Calc_int.Lang) =
 struct
   let tests = L.[
@@ -159,27 +180,6 @@ end
 
 let test_algo () =
   print_endline "Testing Algo";
-  let fail testcase expected result =
-    Status.log_test_failure();
-    Printf.printf "  err %s => %s, expected %s\n" testcase result expected;
-  in
-  let ok testcase result =
-    Printf.printf "  ok %s => %s\n" testcase result
-  in
-  let to_result_str f opt =
-    Option.value ~default:"error" @@ Option.map f opt
-  in
-  let run string expected f to_string =
-    let result =
-      try Some (f (Eval_base.new_context ()))
-      with _ -> None
-    in
-    let to_result_str = to_result_str to_string in
-    if Option.equal (=) expected result then
-      ok string (to_result_str result)
-    else
-      fail string (to_result_str expected) (to_result_str result)
-  in
   let module C = Tests_algo(Algo.To_string) in
   let module E = Tests_algo(Algo.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
