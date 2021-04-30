@@ -29,6 +29,10 @@ Extending calc with conditional evaluation, loops, and booleans
 ** TODO algo-generic
 Extending a given language with conditional evaluation and loops
 
+There are two different approaches so far:
+1. [[file:source/ast/][source/ast]] Extensible ASTs using tagged unions which have a generic extension case
+2. [[file:source/tagless/][source/tagless]] Functors and tagless staged interpreters
+
 * Building
 
 ** Initial one time setup
