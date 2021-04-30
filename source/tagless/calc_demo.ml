@@ -136,11 +136,16 @@ struct
         Some 10, int 3 +. int 7;
         (* 5, int 10 / int 2; *)
         Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
-        (* *   run exn Build.(loop (i 0)); *)
-        (* *   run exn Build.(break (i 3)); *)
+        None, (loop (int 0));
+        None, (break (int 3));
         Some 10, (loop (break (int 10)));
-        (* 11, (loop (cond (index >. int 10) (break index) (int 1))); *)
+        Some 11, (loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1)));
         None, loop (int 1);
+        Some 2, (if_ (bool false) (int 1) (int 2));
+        Some 1, (if_ (bool true) (int 1) (int 2));
+        Some 22, (if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20));
+        Some 11, (if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20));
+        Some 1, (if_ (bool true) (int 1) (int 999));
       ]
 
   let bool_tests =
@@ -150,12 +155,6 @@ struct
       Some true, bool true;
       (* true, int 1 =. loop (int 1); *)
     ]
-
- (* *   run (i 2) Build.(cond (i 0) (i 1) (i 2));
-  * *   run (i 1) Build.(cond (i 1) (i 1) (i 2));
-  * *   run (i 22) Build.(cond (i 1 - i 1) (i 1 + i 10) (i 2 + i 20));
-  * *   run (i 11) Build.(cond (f 2. - f 1.) (i 1 + i 10) (i 2 + i 20));
-  * *   run (i 1) Build.(cond (b true) (i 1) (i 999)); *)
 end
 
 let test_algo () =
