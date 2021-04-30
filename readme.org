@@ -26,8 +26,12 @@ calc-int + calc-float and conversions
 Extending calc-int with conditional evaluation
 ** DONE algo
 Extending calc with conditional evaluation, loops, and booleans
-** TODO algo-generic
+** DONE algo-generic
 Extending a given language with conditional evaluation and loops
+** TODO General language combination
+A system to combine fragments of languages to form new ones
+
+* Approaches
 
 There are two different approaches so far:
 1. [[file:source/ast/][source/ast]] Extensible ASTs using tagged unions which have a generic extension case

@@ -148,7 +148,14 @@ let test_combined () =
     C.bool_tests E.bool_tests
 
 
-module Tests_algo(L : Algo.Lang) =
+module type Algo_calc =
+sig
+  type 'a t
+  include Calc.Lang with type 'a t := 'a t
+  include Algo.Lang with type 'a t := 'a t
+end
+
+module Tests_algo(L : Algo_calc) =
 struct
   let int_tests =
     let module C = Tests_combined(L) in
@@ -189,11 +196,52 @@ let test_algo () =
       run string expected f string_of_bool)
     C.bool_tests E.bool_tests
 
+module Algo_bool =
+struct
+  module type Lang = sig
+    type 'a t
+    include Algo.Lang with type 'a t := 'a t
+    include Calc_bool.Lang with type 'a t := 'a t
+  end
+
+  module To_string = struct
+    type 'a t = string
+    include Calc_bool.To_string'(struct type 'a t = string end)
+    include Algo.To_string'
+  end
+
+  module Eval = struct
+    include Eval_base.T
+    include Calc_bool.Eval'(Eval_base.T)
+    include Algo.Eval'
+  end
+end
+
+module Tests_algo_bool(L : Algo_bool.Lang) =
+struct
+  let bool_tests =
+    L.[
+        Some true, bool true;
+        Some true, bool true || bool false;
+        Some false, bool false || bool false;
+        Some false, bool true && bool false;
+      ]
+end
+
+let test_algo_bool () =
+  print_endline "Testing Algo_bool";
+  let module C = Tests_algo_bool(Algo_bool.To_string) in
+  let module E = Tests_algo_bool(Algo_bool.Eval) in
+  List.iter2 (fun (expected, string) (_, f) ->
+      run string expected f string_of_bool)
+    C.bool_tests E.bool_tests
+
 let () =
   print_endline "hello, tagless Calc";
   test_bool ();
   test_int ();
   test_combined ();
   test_algo ();
+  test_algo_bool ();
   Status.finish ()
 
