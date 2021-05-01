@@ -16,9 +16,9 @@ struct
   let loop body =
     Printf.sprintf "(loop %s)" body
   let break condition =
-    Printf.sprintf "(break_if %s)" condition
+    Printf.sprintf "(break %s)" condition
   let loop_index () =
-    Printf.sprintf "index"
+    Printf.sprintf "loop_index"
 end
 
 module Eval =
