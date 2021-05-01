@@ -24,7 +24,7 @@ let to_result_str f opt =
 
 let run string expected f to_string =
   let result =
-    try Some (f (Eval_base.new_context ()))
+    try Some (f (Interpreter_context.make ()))
     with _ -> None
   in
   let to_result_str = to_result_str to_string in
@@ -48,7 +48,7 @@ let test_int() =
   let module C = Tests_int(Calc_int.Full.To_string) in
   let module E = Tests_int(Calc_int.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context()) in
+      let result = f (Interpreter_context.make ()) in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
       else begin
@@ -77,7 +77,7 @@ let test_bool () =
   let module C = Tests_bool(Calc_bool.Full.To_string) in
   let module E = Tests_bool(Calc_bool.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context ()) in
+      let result = f (Interpreter_context.make ()) in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
       else begin
@@ -129,7 +129,7 @@ let test_combined () =
   let module C = Tests_combined(Calc.Full.To_string) in
   let module E = Tests_combined(Calc.Full.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context ()) in
+      let result = f (Interpreter_context.make ()) in
       if expected = result then
         Printf.printf "  ok %s => %d\n" string result
       else begin
@@ -138,7 +138,7 @@ let test_combined () =
       end)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Eval_base.new_context ()) in
+      let result = f (Interpreter_context.make ()) in
       if expected = result then
         Printf.printf "  ok %s => %b\n" string result
       else begin
@@ -211,7 +211,7 @@ struct
   end
 
   module Eval = struct
-    include Eval_base.T
+    include Empty.Eval
     include Calc_bool.Layer.Eval
     include Algo.Layer.Eval
   end

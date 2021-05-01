@@ -38,7 +38,7 @@ struct
       let rec loop index =
         if index > 100 then
           failwith "too many loop iterations";
-        ignore (body { Eval_base.index = Some index });
+        ignore (body { Interpreter_context.index = Some index });
         loop (index + 1)
       in
       try
@@ -50,9 +50,9 @@ struct
       raise (Loop_break (value ctx))
 
     let loop_index () = function
-      | { Eval_base.index = Some index } ->
+      | { Interpreter_context.index = Some index } ->
         index
-      | { Eval_base.index = None } ->
+      | { Interpreter_context.index = None } ->
         failwith "index used outside of loop"
   end
 end
@@ -69,7 +69,7 @@ struct
 
   module Eval =
   struct
-    include Eval_base.T
+    include Empty.Eval
     include Calc.Layer.Eval
     include Layer.Eval
   end

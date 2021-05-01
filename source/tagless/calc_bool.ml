@@ -26,10 +26,7 @@ end
 
 module Full =
 struct
-  module type Lang =
-  sig
-    include Layer.Lang
-  end
+  module type Lang = Layer.Lang
 
   module To_string =
   struct
@@ -40,7 +37,7 @@ struct
 
   module Eval =
   struct
-    include Eval_base.T
+    include Empty.Eval
     include Layer.Eval
   end
   let () = let module T : Lang = Eval in ()

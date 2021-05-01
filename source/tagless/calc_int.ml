@@ -32,16 +32,18 @@ end
 
 module Full =
 struct
+  module type Lang = Layer.Lang
+
   module To_string = struct
     type 'a t = string
     include Layer.To_string
   end
-  let () = let module T : Layer.Lang = To_string in ()
+  let () = let module T : Lang = To_string in ()
 
   module Eval =
   struct
-    include Eval_base.T
+    include Empty.Eval
     include Layer.Eval
   end
-  let () = let module T : Layer.Lang = Eval in ()
+  let () = let module T : Lang = Eval in ()
 end

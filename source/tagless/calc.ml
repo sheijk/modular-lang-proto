@@ -56,7 +56,7 @@ struct
 
   module Eval =
   struct
-    include Eval_base.T
+    include Empty.Eval
     include Layer.Eval
   end
 
