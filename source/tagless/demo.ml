@@ -1,117 +1,151 @@
 
-module Status : sig
-  val log_test_failure : unit -> unit
+module Tester : sig
   val finish : unit -> unit
+  val fail : string -> string -> string -> unit
+  val ok : string -> string -> unit
+  val run :
+    string ->
+    'a option ->
+    (Interpreter_context.t -> 'a) ->
+    ('a -> string) ->
+    unit
 end = struct
   let errors = ref 0
-  let log_test_failure() = incr errors
+  let total = ref 0
+
   let finish () =
     if ((!errors) > 0) then begin
-      Printf.printf "%d tests failed\n" (!errors);
-      exit 1;
-    end
+      Printf.printf "%d tests run, %d tests failed" (!total) (!errors);
+      exit 1
+    end else
+      Printf.printf "%d tests run\n" (!total)
+
+  let fail testcase expected result =
+    incr total;
+    incr errors;
+    Printf.printf "  err %s => %s, expected %s\n" testcase result expected
+
+  let ok testcase result =
+    incr total;
+    Printf.printf "  ok %s => %s\n" testcase result
+
+  let to_result_str f opt =
+    Option.value ~default:"error" @@ Option.map f opt
+
+  let run string expected f to_string =
+    let result =
+      try Some (f (Interpreter_context.make ()))
+      with _ -> None
+    in
+    let to_result_str = to_result_str to_string in
+    if Option.equal (=) expected result then
+      ok string (to_result_str result)
+    else
+      fail string (to_result_str expected) (to_result_str result)
 end
 
-let fail testcase expected result =
-  Status.log_test_failure();
-  Printf.printf "  err %s => %s, expected %s\n" testcase result expected
+module type Test_names =
+sig
+  type 'a t = string
+  val int_tests : (int option * string) list
+  val bool_tests : (bool option * string) list
+end
 
-let ok testcase result =
-  Printf.printf "  ok %s => %s\n" testcase result
+module type Test_cases =
+sig
+  type 'a t = Interpreter_context.t -> 'a
+  val int_tests : (int option * int t) list
+  val bool_tests : (bool option * bool t) list
+end
 
-let to_result_str f opt =
-  Option.value ~default:"error" @@ Option.map f opt
-
-let run string expected f to_string =
-  let result =
-    try Some (f (Interpreter_context.make ()))
-    with _ -> None
-  in
-  let to_result_str = to_result_str to_string in
-  if Option.equal (=) expected result then
-    ok string (to_result_str result)
-  else
-    fail string (to_result_str expected) (to_result_str result)
+module Test_runner(C : Test_names)(E : Test_cases) =
+struct
+  let run case_name =
+    Printf.printf "Testing %s\n" case_name;
+    List.iter2 (fun (expected, string) (_, f) ->
+        Tester.run string expected f string_of_int)
+      C.int_tests E.int_tests;
+    List.iter2 (fun (expected, string) (_, f) ->
+        Tester.run string expected f string_of_bool)
+      C.bool_tests E.bool_tests
+end
 
 module Tests_int(L : Calc_int_layer.Lang) =
 struct
-  let tests = L.[
-      3, int 1 +. int 2;
-      1, int 1;
-      99, int 99;
-      106, int 100 +. int 3 *. int 2;
+  type 'a t = 'a L.t
+
+  let int_tests = L.[
+      Some 3, int 1 +. int 2;
+      Some 1, int 1;
+      Some 99, int 99;
+      Some 106, int 100 +. int 3 *. int 2;
     ]
+
+  let bool_tests = []
 end
 
 let test_int() =
-  print_endline "Testing Calc_int";
-  let module C = Tests_int(Calc_int.To_string) in
-  let module E = Tests_int(Calc_int.Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Interpreter_context.make ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %d\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %d, expected %d\n" string result expected;
-      end)
-    C.tests E.tests
+  let module T =
+    Test_runner
+      (Tests_int(Calc_int.To_string))
+      (Tests_int(Calc_int.Eval))
+  in
+  T.run "Calc_int"
 
 module Tests_bool(L : Calc_bool_layer.Lang) =
 struct
-  let tests = L.[
-      true, bool true;
-      false, bool false;
-      true, (bool true && bool true);
-      false, (bool true && bool false);
-      true, (bool true || bool false);
-      true, (bool false || bool true);
-      false, (bool false || bool false);
-      true, (bool true && (bool true || bool false));
-      false, (bool true && bool false || bool false && bool true);
+  type 'a t = 'a L.t
+
+  let bool_tests = L.[
+      Some true, bool true;
+      Some false, bool false;
+      Some true, (bool true && bool true);
+      Some false, (bool true && bool false);
+      Some true, (bool true || bool false);
+      Some true, (bool false || bool true);
+      Some false, (bool false || bool false);
+      Some true, (bool true && (bool true || bool false));
+      Some false, (bool true && bool false || bool false && bool true);
     ]
+
+  let int_tests = []
 end
 
 let test_bool () =
-  print_endline "Testing Calc_bool";
-  let module C = Tests_bool(Calc_bool.To_string) in
-  let module E = Tests_bool(Calc_bool.Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Interpreter_context.make ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %b\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %b, expected %b\n" string result expected;
-      end)
-    C.tests E.tests
-
+  let module T =
+    Test_runner
+      (Tests_bool(Calc_bool.To_string))
+      (Tests_bool(Calc_bool.Eval))
+  in
+  T.run "Calc_bool"
 
 module Tests_combined(L : Calc_layer.Lang) =
 struct
+  type 'a t = 'a L.t
+
   let int_tests =
     let module Ci = Tests_int(L) in
-    Ci.tests @ L.[
-      1, int 1;
-      15, int 10 +. int 5;
-      123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
-      (* 5, int 10 / int 2; *)
+    Ci.int_tests @ L.[
+      Some 1, int 1;
+      Some 15, int 10 +. int 5;
+      Some 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+      (* Some 5, int 10 / int 2; *)
     ]
 
   let bool_tests =
     let module Cb = Tests_bool(L) in
-    Cb.tests @ L.[
-      true, bool true;
-      true, int 4 <. int 10;
-      false, int 4 >. int 10;
-      true, int 3 =. int 3;
-      false, int 3 =. int 4;
-      true, int 3 >. int (-10);
-      false, int 3 >. int 3;
+    Cb.bool_tests @ L.[
+      Some true, bool true;
+      Some true, int 4 <. int 10;
+      Some false, int 4 >. int 10;
+      Some true, int 3 =. int 3;
+      Some false, int 3 =. int 4;
+      Some true, int 3 >. int (-10);
+      Some false, int 3 >. int 3;
 
-      true, bool true || bool false;
-      false, bool false || bool false;
-      false, bool true && bool false;
+      Some true, bool true || bool false;
+      Some false, bool false || bool false;
+      Some false, bool true && bool false;
     ]
 
   (* Float tests from ast/Calc *)
@@ -124,43 +158,21 @@ struct
   (*   run (f 8.) Build.(f 3. + i 5); *)
 end
 
-let test_combined () =
-  print_endline "Testing Calc";
-  let module C = Tests_combined(Calc.To_string) in
-  let module E = Tests_combined(Calc.Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Interpreter_context.make ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %d\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %d, expected %d\n" string result expected;
-      end)
-    C.int_tests E.int_tests;
-  List.iter2 (fun (expected, string) (_, f) ->
-      let result = f (Interpreter_context.make ()) in
-      if expected = result then
-        Printf.printf "  ok %s => %b\n" string result
-      else begin
-        Status.log_test_failure();
-        Printf.printf "  err %s => %b, expected %b\n" string result expected;
-      end)
-    C.bool_tests E.bool_tests
+let test_combined() =
+  let module T =
+    Test_runner
+      (Tests_combined(Calc.To_string))
+      (Tests_combined(Calc.Eval))
+  in
+  T.run "Calc"
 
-
-module type Algo_calc =
-sig
-  type 'a t
-  include Calc_layer.Lang with type 'a t := 'a t
-  include Algo_layer.Lang with type 'a t := 'a t
-end
-
-module Tests_algo(L : Algo_calc) =
+module Tests_algo(L : Algo_calc.Lang) =
 struct
+  type 'a t = 'a L.t
+
   let int_tests =
     let module C = Tests_combined(L) in
-    List.map (fun (x, t) -> Some x, t) C.int_tests
-    @ L.[
+    C.int_tests @ L.[
         Some 10, int 3 +. int 7;
         (* 5, int 10 / int 2; *)
         Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
@@ -178,26 +190,24 @@ struct
 
   let bool_tests =
     let module C = Tests_combined(L) in
-    List.map (fun (x, t) -> Some x, t) C.bool_tests
-    @ L.[
+    C.bool_tests @ L.[
       Some true, bool true;
       (* true, int 1 =. loop (int 1); *)
     ]
 end
 
-let test_algo () =
-  print_endline "Testing Algo";
-  let module C = Tests_algo(Algo_calc.To_string) in
-  let module E = Tests_algo(Algo_calc.Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      run string expected f string_of_int)
-    C.int_tests E.int_tests;
-  List.iter2 (fun (expected, string) (_, f) ->
-      run string expected f string_of_bool)
-    C.bool_tests E.bool_tests
+let test_algo() =
+  let module T =
+    Test_runner
+      (Tests_algo(Algo_calc.To_string))
+      (Tests_algo(Algo_calc.Eval))
+  in
+  T.run "Algo_calc"
 
 module Tests_algo_bool(L : Algo_bool.Lang) =
 struct
+  type 'a t = 'a L.t
+
   let bool_tests =
     L.[
         Some true, bool true;
@@ -205,15 +215,17 @@ struct
         Some false, bool false || bool false;
         Some false, bool true && bool false;
       ]
+
+  let int_tests = []
 end
 
-let test_algo_bool () =
-  print_endline "Testing Algo_bool";
-  let module C = Tests_algo_bool(Algo_bool.To_string) in
-  let module E = Tests_algo_bool(Algo_bool.Eval) in
-  List.iter2 (fun (expected, string) (_, f) ->
-      run string expected f string_of_bool)
-    C.bool_tests E.bool_tests
+let test_algo_bool() =
+  let module T =
+    Test_runner
+      (Tests_algo_bool(Algo_bool.To_string))
+      (Tests_algo_bool(Algo_bool.Eval))
+  in
+  T.run "Algo_bool"
 
 let () =
   print_endline "hello, tagless Calc";
@@ -222,5 +234,5 @@ let () =
   test_combined ();
   test_algo ();
   test_algo_bool ();
-  Status.finish ()
+  Tester.finish ()
 
