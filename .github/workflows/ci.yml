@@ -33,4 +33,4 @@ jobs:
         run: opam exec -- dune test
       - run: opam exec -- dune exec calc-demo
       - run: opam exec -- dune exec algo-demo
-      - run: opam exec -- dune exec tagless-calc-demo
+      - run: opam exec -- dune exec tagless-demo
