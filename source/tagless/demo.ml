@@ -187,35 +187,14 @@ end
 
 let test_algo () =
   print_endline "Testing Algo";
-  let module C = Tests_algo(Algo.To_string) in
-  let module E = Tests_algo(Algo.Eval) in
+  let module C = Tests_algo(Algo_calc.To_string) in
+  let module E = Tests_algo(Algo_calc.Eval) in
   List.iter2 (fun (expected, string) (_, f) ->
       run string expected f string_of_int)
     C.int_tests E.int_tests;
   List.iter2 (fun (expected, string) (_, f) ->
       run string expected f string_of_bool)
     C.bool_tests E.bool_tests
-
-module Algo_bool =
-struct
-  module type Lang = sig
-    type 'a t
-    include Algo_layer.Lang with type 'a t := 'a t
-    include Calc_bool_layer.Lang with type 'a t := 'a t
-  end
-
-  module To_string = struct
-    type 'a t = string
-    include Calc_bool_layer.To_string
-    include Algo_layer.To_string
-  end
-
-  module Eval = struct
-    include Empty.Eval
-    include Calc_bool_layer.Eval
-    include Algo_layer.Eval
-  end
-end
 
 module Tests_algo_bool(L : Algo_bool.Lang) =
 struct
