@@ -28,14 +28,27 @@ Extending calc-int with conditional evaluation
 Extending calc with conditional evaluation, loops, and booleans
 ** DONE algo-generic
 Extending a given language with conditional evaluation and loops
-** TODO General language combination
+** DONE General language combination
 A system to combine fragments of languages to form new ones
+** TODO binding
+Define values and use them
+** TODO More complex compiler analysis
+Constant folding, transformations
 
 * Approaches
 
 There are two different approaches so far:
-1. [[file:source/ast/][source/ast]] Extensible ASTs using tagged unions which have a generic extension case
-2. [[file:source/tagless/][source/tagless]] Functors and tagless staged interpreters
+1. Extensible ASTs using extensible tagged unions in [[file:source/ast/][source/ast]]
+
+   This works well to make languages which can be extended. But it does not
+   scale well to multiple levels of language layers, compare Algo with the
+   implementation for tagless unions
+   
+2. Functors and tagless staged interpreters in [[file:source/tagless/][source/tagless]]
+
+   This works well for multiple layers of languages which can extend each other
+   multiple times. Also reusable language layers are very simple to do.
+
 
 * Building
 
