@@ -3,6 +3,5 @@
 
 (executable
  (name demo)
- (public_name tagless-demo)
- (preprocess (pps ppx_deriving.show)))
+ (public_name tagless-demo))
 
