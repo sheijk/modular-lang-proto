@@ -239,7 +239,15 @@ struct
       let_ "foo" (int (-1))
         (get "foo" +.
          let_ "foo" (int 24)
-           (int 100 +. get "foo"))
+           (int 100 +. get "foo"));
+
+      Some 14,
+      let_ "sum" (int 0)
+        (loop
+          (set "sum" (loop_index() *. loop_index() +. get "sum")
+             (if_ (get "sum" >. int 10)
+                (break (get "sum"))
+                (int 1))))
   ]
 end
 
