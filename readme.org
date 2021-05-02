@@ -34,6 +34,8 @@ A system to combine fragments of languages to form new ones
 Define values and use them
 ** TODO More complex compiler analysis
 Constant folding, transformations
+** TODO Source Location handling
+Track source locations and use them for error reporting
 
 * Approaches
 
