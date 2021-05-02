@@ -31,11 +31,11 @@ struct
     else
       false_ ctx
 
-  let loop body = fun _ ->
+  let loop body = fun ctx ->
     let rec loop index =
       if index > 100 then
         failwith "too many loop iterations";
-      ignore (body { Interpreter_context.index = Some index });
+      ignore (body @@ Interpreter_context.with_index ctx index);
       loop (index + 1)
     in
     try
@@ -47,8 +47,8 @@ struct
     raise (Loop_break (value ctx))
 
   let loop_index () = function
-    | { Interpreter_context.index = Some index } ->
+    | { Interpreter_context.index = Some index; _ } ->
       index
-    | { Interpreter_context.index = None } ->
+    | { Interpreter_context.index = None; _ } ->
       failwith "index used outside of loop"
 end

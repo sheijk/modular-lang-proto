@@ -227,12 +227,36 @@ let test_algo_bool() =
   in
   T.run "Algo_bool"
 
+module Tests_algo_bindings(L : Algo_bindings.Lang) =
+struct
+  type 'a t = 'a L.t
+
+  let bool_tests = []
+
+  let int_tests = L.[
+      Some 99, let_ "foo" (int 99) (get "foo");
+      Some 123,
+      let_ "foo" (int (-1))
+        (get "foo" +.
+         let_ "foo" (int 24)
+           (int 100 +. get "foo"))
+  ]
+end
+
+let test_algo_bindings () =
+  let module T =
+    Test_runner
+      (Tests_algo_bindings(Algo_bindings.To_string))
+      (Tests_algo_bindings(Algo_bindings.Eval))
+  in
+  T.run "Algo_bindings"
+
 let () =
-  print_endline "hello, tagless Calc";
   test_bool ();
   test_int ();
   test_combined ();
   test_algo ();
   test_algo_bool ();
+  test_algo_bindings ();
   Tester.finish ()
 
