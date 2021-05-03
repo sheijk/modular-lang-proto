@@ -13,3 +13,9 @@ module Eval =
 struct
   type 'a t = Interpreter_context.t -> 'a
 end
+
+module Eval_compiled =
+struct
+  type 'a t = Compiler_context.t * (Interpreter_context.t -> 'a)
+end
+

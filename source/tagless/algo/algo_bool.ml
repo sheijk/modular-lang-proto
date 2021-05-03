@@ -15,3 +15,12 @@ module Eval = struct
   include Calc_bool_layer.Eval
   include Algo_layer.Eval
 end
+
+module Eval_compiled =
+struct
+  include Empty.Eval_compiled
+  include Calc_bool_layer.Eval_compiled
+  include Algo_layer.Eval_compiled
+end
+let () = let module T : Lang = Eval_compiled in ()
+

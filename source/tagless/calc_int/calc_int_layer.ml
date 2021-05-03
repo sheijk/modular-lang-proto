@@ -25,3 +25,22 @@ struct
   let ( *. ) lhs rhs = fun ctx -> (lhs ctx) * (rhs ctx)
   let ( /. ) lhs rhs = fun ctx -> (lhs ctx) / (rhs ctx)
 end
+
+let apply f (lhs_info, lhs) (rhs_info, rhs) =
+  Compiler_context.merge lhs_info rhs_info,
+  fun ctx ->
+    (f (lhs ctx) (rhs ctx))
+
+module Eval_compiled =
+struct
+  include Empty.Eval_compiled
+
+  let int i = Compiler_context.make(), fun _ -> i
+
+  let ( +. ) = apply ( + )
+  let ( -. ) = apply ( - )
+  let ( *. ) = apply ( * )
+  let ( /. ) = apply ( / )
+end
+let () = let module T : Lang = Eval_compiled in ()
+

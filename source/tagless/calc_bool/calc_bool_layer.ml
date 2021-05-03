@@ -19,3 +19,18 @@ struct
   let ( && ) lhs rhs = fun ctx -> ((lhs ctx) && (rhs ctx))
   let ( || ) lhs rhs = fun ctx -> ((lhs ctx) || (rhs ctx))
 end
+
+module Eval_compiled =
+struct
+  let bool b = Compiler_context.make(), fun _ -> b
+
+  let ( && ) (lhs_info, lhs) (rhs_info, rhs) =
+    Compiler_context.merge lhs_info rhs_info,
+    fun ctx ->
+      ((lhs ctx) && (rhs ctx))
+
+  let ( || ) (lhs_info, lhs) (rhs_info, rhs) =
+    Compiler_context.merge lhs_info rhs_info,
+    fun ctx ->
+      ((lhs ctx) || (rhs ctx))
+end

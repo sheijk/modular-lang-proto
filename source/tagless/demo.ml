@@ -259,6 +259,38 @@ let test_algo_bindings () =
   in
   T.run "Algo_bindings"
 
+module Tests_algo_compiled(L : Algo_calc.Lang) =
+struct
+  type 'a t = 'a L.t
+
+  let bool_tests =
+    let module T = Tests_algo(L) in
+    T.bool_tests @ []
+
+  let int_tests =
+    let module T = Tests_algo(L) in
+    T.int_tests @ L.[
+      None, if_ (bool false) (loop_index()) (int 0);
+    ]
+end
+
+let test_algo_compiled () =
+  print_endline "Testing Algo_calc compiled";
+  let module P = Tests_algo_compiled(Algo_calc.To_string) in
+  let module C = Tests_algo_compiled(Algo_calc.Eval_compiled) in
+  let check_and_run info f ctx =
+    if false = Compiler_context.validate info then
+      failwith "compiler error"
+    else
+      f ctx
+  in
+  List.iter2 (fun (expected, string) (_, (info, f)) ->
+      Tester.run string expected (check_and_run info f) string_of_bool)
+    P.bool_tests C.bool_tests;
+  List.iter2 (fun (expected, string) (_, (info, f)) ->
+      Tester.run string expected (check_and_run info f) string_of_int)
+    P.int_tests C.int_tests
+
 let () =
   test_bool ();
   test_int ();
@@ -266,5 +298,6 @@ let () =
   test_algo ();
   test_algo_bool ();
   test_algo_bindings ();
+  test_algo_compiled();
   Tester.finish ()
 

@@ -52,3 +52,47 @@ struct
     | { Interpreter_context.index = None; _ } ->
       failwith "index used outside of loop"
 end
+
+module Eval_compiled =
+struct
+  exception Loop_break of int
+
+  let if_ (c_info, condition) (t_info, true_) (f_info, false_) =
+    let info =
+      Compiler_context.merge
+        c_info
+        (Compiler_context.merge f_info t_info)
+    in
+    info, fun (ctx : Interpreter_context.t) ->
+      if (condition ctx) then
+        true_ ctx
+      else
+        false_ ctx
+
+  let loop (b_info, body) =
+    let _loop_num, info = Compiler_context.mark_loop b_info in
+    info, fun ctx ->
+      let rec loop index =
+        if index > 100 then
+          failwith "too many loop iterations";
+        ignore (body @@ Interpreter_context.with_index ctx index);
+        loop (index + 1)
+      in
+      try
+        loop 0
+      with Loop_break i ->
+        i
+
+  let break (v_info, value) =
+    v_info, fun ctx ->
+      raise (Loop_break (value ctx))
+
+  let loop_index () =
+    Compiler_context.mark_loop_index @@ Compiler_context.make(),
+    function
+    | { Interpreter_context.index = Some index; _ } ->
+      index
+    | { Interpreter_context.index = None; _ } ->
+      failwith "index used outside of loop"
+end
+
