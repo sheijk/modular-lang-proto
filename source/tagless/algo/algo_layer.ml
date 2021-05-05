@@ -77,12 +77,14 @@ struct
   let loop (b_info, body) =
     let _loop_num, info = Compiler.Info.mark_loop b_info in
     info, fun (ctx : Compiler.Context.t) ->
-      let body = body ctx in
+      let loop_index = ref 0 in
+      let body = body @@ Compiler.Context.new_loop_index ctx loop_index in
       fun (ctx : Interpreter_context.t) ->
         let rec loop index =
+          loop_index := index;
           if index > 100 then
             failwith "too many loop iterations";
-          ignore (body @@ Interpreter_context.with_index ctx index);
+          ignore (body ctx);
           loop (index + 1)
         in
         try
@@ -98,11 +100,10 @@ struct
 
   let loop_index () =
     Compiler.Info.mark_loop_index @@ Compiler.Info.make(),
-    fun (_ : Compiler.Context.t) ->
-      function
-      | { Interpreter_context.index = Some index; _ } ->
-        index
-      | { Interpreter_context.index = None; _ } ->
-        failwith "index used outside of loop"
+    function
+    | { Compiler.Context.loop_index = Some index; _ } ->
+      fun _ -> !index
+    | { Compiler.Context.loop_index = None; _ } ->
+      failwith "index used outside of loop"
 end
 

@@ -279,17 +279,16 @@ let test_algo_compiled () =
   let module P = Tests_algo_compiled(Algo_calc.To_string) in
   let module C = Tests_algo_compiled(Algo_calc.Eval_compiled) in
   let check_and_run info f ctx =
+    let f = f @@ Compiler.Context.make () in
     if false = Compiler.Info.validate info then
       failwith "compiler error"
     else
       f ctx
   in
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      let f = f @@ Compiler.Context.make () in
       Tester.run string expected (check_and_run info f) string_of_bool)
     P.bool_tests C.bool_tests;
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      let f = f @@ Compiler.Context.make () in
       Tester.run string expected (check_and_run info f) string_of_int)
     P.int_tests C.int_tests
 

@@ -25,7 +25,9 @@ module Context =
 struct
   type t = {
     variables : (string * int) list;
+    loop_index : int ref option;
   }
 
-  let make () = { variables = [] }
+  let make () = { variables = []; loop_index = None; }
+  let new_loop_index ctx store = { ctx with loop_index = Some store; }
 end
