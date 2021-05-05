@@ -285,9 +285,11 @@ let test_algo_compiled () =
       f ctx
   in
   List.iter2 (fun (expected, string) (_, (info, f)) ->
+      let f = f @@ Compiler.Context.make () in
       Tester.run string expected (check_and_run info f) string_of_bool)
     P.bool_tests C.bool_tests;
   List.iter2 (fun (expected, string) (_, (info, f)) ->
+      let f = f @@ Compiler.Context.make () in
       Tester.run string expected (check_and_run info f) string_of_int)
     P.int_tests C.int_tests
 

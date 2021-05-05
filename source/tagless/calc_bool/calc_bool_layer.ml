@@ -20,17 +20,19 @@ struct
   let ( || ) lhs rhs = fun ctx -> ((lhs ctx) || (rhs ctx))
 end
 
+let apply (f : bool -> bool -> bool) (lhs_info, lhs) (rhs_info, rhs) =
+  Compiler.Info.merge lhs_info rhs_info,
+  fun (ctx : Compiler.Context.t) ->
+    let lhs = lhs ctx
+    and rhs = rhs ctx
+    in
+    fun (info : Interpreter_context.t) ->
+      (f (lhs info) (rhs info))
+
 module Eval_compiled =
 struct
-  let bool b = Compiler.Info.make(), fun _ -> b
+  let bool b = Compiler.Info.make(), fun _ _ -> b
 
-  let ( && ) (lhs_info, lhs) (rhs_info, rhs) =
-    Compiler.Info.merge lhs_info rhs_info,
-    fun ctx ->
-      ((lhs ctx) && (rhs ctx))
-
-  let ( || ) (lhs_info, lhs) (rhs_info, rhs) =
-    Compiler.Info.merge lhs_info rhs_info,
-    fun ctx ->
-      ((lhs ctx) || (rhs ctx))
+  let ( && ) = apply ( && )
+  let ( || ) = apply ( || )
 end

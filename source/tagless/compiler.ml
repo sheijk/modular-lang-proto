@@ -21,9 +21,11 @@ struct
     loop_num, { loop_count = loop_num + 1; unbound_loop_index = false; }
 end
 
-(* module Context =
- * struct
- *   type t = {}
- * end *)
+module Context =
+struct
+  type t = {
+    variables : (string * int) list;
+  }
 
-
+  let make () = { variables = [] }
+end

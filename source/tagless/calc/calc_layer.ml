@@ -42,7 +42,11 @@ end
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,
   fun ctx ->
-    (f (lhs ctx) (rhs ctx))
+    let lhs = lhs ctx
+    and rhs = rhs ctx
+    in
+    fun ctx ->
+      (f (lhs ctx) (rhs ctx))
 
 module Eval_compiled =
 struct
@@ -50,8 +54,17 @@ struct
   include Calc_bool_layer.Eval_compiled
   include Calc_int_layer.Eval_compiled
 
-  let int_to_float (context, value) = context, fun ctx -> float_of_int (value ctx)
-  let float_to_int (context, value) = context, fun ctx -> int_of_float (value ctx)
+  let int_to_float (context, value) =
+    context,
+    fun ctx ->
+      let value = value ctx in
+      fun ctx -> float_of_int (value ctx)
+
+  let float_to_int (context, value) =
+    context,
+    fun ctx ->
+      let value = value ctx in
+      fun ctx -> int_of_float (value ctx)
 
   let ( =. ) = apply ( = )
   let ( <. ) = apply ( < )

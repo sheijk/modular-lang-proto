@@ -63,36 +63,46 @@ struct
         c_info
         (Compiler.Info.merge f_info t_info)
     in
-    info, fun (ctx : Interpreter_context.t) ->
-      if (condition ctx) then
-        true_ ctx
-      else
-        false_ ctx
+    info, fun (ctx : Compiler.Context.t) ->
+      let condition = condition ctx
+      and true_ = true_ ctx
+      and false_ = false_ ctx
+      in
+      fun (ctx : Interpreter_context.t) ->
+        if (condition ctx) then
+          true_ ctx
+        else
+          false_ ctx
 
   let loop (b_info, body) =
     let _loop_num, info = Compiler.Info.mark_loop b_info in
-    info, fun ctx ->
-      let rec loop index =
-        if index > 100 then
-          failwith "too many loop iterations";
-        ignore (body @@ Interpreter_context.with_index ctx index);
-        loop (index + 1)
-      in
-      try
-        loop 0
-      with Loop_break i ->
-        i
+    info, fun (ctx : Compiler.Context.t) ->
+      let body = body ctx in
+      fun (ctx : Interpreter_context.t) ->
+        let rec loop index =
+          if index > 100 then
+            failwith "too many loop iterations";
+          ignore (body @@ Interpreter_context.with_index ctx index);
+          loop (index + 1)
+        in
+        try
+          loop 0
+        with Loop_break i ->
+          i
 
   let break (v_info, value) =
     v_info, fun ctx ->
-      raise (Loop_break (value ctx))
+      let value = value ctx in
+      fun ctx ->
+        raise (Loop_break (value ctx))
 
   let loop_index () =
     Compiler.Info.mark_loop_index @@ Compiler.Info.make(),
-    function
-    | { Interpreter_context.index = Some index; _ } ->
-      index
-    | { Interpreter_context.index = None; _ } ->
-      failwith "index used outside of loop"
+    fun (_ : Compiler.Context.t) ->
+      function
+      | { Interpreter_context.index = Some index; _ } ->
+        index
+      | { Interpreter_context.index = None; _ } ->
+        failwith "index used outside of loop"
 end
 
