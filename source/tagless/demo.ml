@@ -259,25 +259,27 @@ let test_algo_bindings () =
   in
   T.run "Algo_bindings"
 
-module Tests_algo_compiled(L : Algo_calc.Lang) =
+module Tests_algo_compiler_errors(L : Algo_bindings.Lang) =
 struct
   type 'a t = 'a L.t
 
   let bool_tests =
-    let module T = Tests_algo(L) in
-    T.bool_tests @ []
+    let module C = Tests_algo(L) in
+    let module B = Tests_algo_bindings(L) in
+    C.bool_tests @ B.bool_tests @ []
 
   let int_tests =
-    let module T = Tests_algo(L) in
-    T.int_tests @ L.[
+    let module C = Tests_algo(L) in
+    let module B = Tests_algo_bindings(L) in
+    C.int_tests @ B.int_tests @ L.[
       None, if_ (bool false) (loop_index()) (int 0);
     ]
 end
 
 let test_algo_compiled () =
   print_endline "Testing Algo_calc compiled";
-  let module P = Tests_algo_compiled(Algo_calc.To_string) in
-  let module C = Tests_algo_compiled(Algo_calc.Eval_compiled) in
+  let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
+  let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
   let check_and_run info f ctx =
     let f = f @@ Compiler.Context.make () in
     if false = Compiler.Info.validate info then

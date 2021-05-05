@@ -24,10 +24,20 @@ end
 module Context =
 struct
   type t = {
-    variables : (string * int) list;
+    variables : (string * int ref) list;
     loop_index : int ref option;
   }
 
   let make () = { variables = []; loop_index = None; }
   let new_loop_index ctx store = { ctx with loop_index = Some store; }
+  let new_variable ctx name store =
+    { ctx with variables = (name, store) :: ctx.variables; }
+
+  let find_variable ctx name =
+    let rec find = function
+      | (var, r) :: _ when var = name -> r
+      | _ :: remaining -> find remaining
+      | [] -> failwith ("accessed undefined variable " ^ name)
+    in
+    find ctx.variables
 end

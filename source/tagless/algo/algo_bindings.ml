@@ -23,3 +23,12 @@ struct
   include Bindings_layer.Eval
 end
 let () = let module T : Algo_layer.Lang = Eval in ()
+
+module Eval_compiled =
+struct
+  include Empty.Eval_compiled
+  include Calc_layer.Eval_compiled
+  include Algo_layer.Eval_compiled
+  include Bindings_layer.Eval_compiled
+end
+let () = let module T : Lang = Eval_compiled in ()
