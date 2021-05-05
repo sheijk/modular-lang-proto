@@ -22,15 +22,15 @@ end
 
 module Eval_compiled =
 struct
-  let bool b = Compiler_context.make(), fun _ -> b
+  let bool b = Compiler.Info.make(), fun _ -> b
 
   let ( && ) (lhs_info, lhs) (rhs_info, rhs) =
-    Compiler_context.merge lhs_info rhs_info,
+    Compiler.Info.merge lhs_info rhs_info,
     fun ctx ->
       ((lhs ctx) && (rhs ctx))
 
   let ( || ) (lhs_info, lhs) (rhs_info, rhs) =
-    Compiler_context.merge lhs_info rhs_info,
+    Compiler.Info.merge lhs_info rhs_info,
     fun ctx ->
       ((lhs ctx) || (rhs ctx))
 end

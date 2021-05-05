@@ -40,7 +40,7 @@ struct
 end
 
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
-  Compiler_context.merge lhs_info rhs_info,
+  Compiler.Info.merge lhs_info rhs_info,
   fun ctx ->
     (f (lhs ctx) (rhs ctx))
 

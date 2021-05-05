@@ -16,6 +16,6 @@ end
 
 module Eval_compiled =
 struct
-  type 'a t = Compiler_context.t * (Interpreter_context.t -> 'a)
+  type 'a t = Compiler.Info.t * (Interpreter_context.t -> 'a)
 end
 

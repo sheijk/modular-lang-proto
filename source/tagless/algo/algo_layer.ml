@@ -59,9 +59,9 @@ struct
 
   let if_ (c_info, condition) (t_info, true_) (f_info, false_) =
     let info =
-      Compiler_context.merge
+      Compiler.Info.merge
         c_info
-        (Compiler_context.merge f_info t_info)
+        (Compiler.Info.merge f_info t_info)
     in
     info, fun (ctx : Interpreter_context.t) ->
       if (condition ctx) then
@@ -70,7 +70,7 @@ struct
         false_ ctx
 
   let loop (b_info, body) =
-    let _loop_num, info = Compiler_context.mark_loop b_info in
+    let _loop_num, info = Compiler.Info.mark_loop b_info in
     info, fun ctx ->
       let rec loop index =
         if index > 100 then
@@ -88,7 +88,7 @@ struct
       raise (Loop_break (value ctx))
 
   let loop_index () =
-    Compiler_context.mark_loop_index @@ Compiler_context.make(),
+    Compiler.Info.mark_loop_index @@ Compiler.Info.make(),
     function
     | { Interpreter_context.index = Some index; _ } ->
       index
