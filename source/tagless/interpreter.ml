@@ -36,17 +36,52 @@ sig
   include Variables with type t := t
 end
 
-module Dynamic : All =
+module No_runtime : Create =
 struct
-  type t = Interpreter_context.t
-
-  let make = Interpreter_context.make
-
-  let with_variable = Interpreter_context.with_variable
-  let get = Interpreter_context.get_variable
-  let set = Interpreter_context.set_variable
-
-  let with_index = Interpreter_context.with_index
-  let loop_index ctx = ctx.Interpreter_context.index
+  type t = unit
+  let make () = ()
 end
 
+exception Unknow_variable of string
+
+module Dynamic : All =
+struct
+  type t = {
+    index : int option;
+    variables : (string * int ref) list;
+  }
+
+  include struct
+    let make () =
+      { index = None; variables = [] }
+  end
+
+  include struct
+    let with_index ctx index =
+      { ctx with index = Some index; }
+
+    let loop_index ctx =
+      ctx.index
+  end
+
+  include struct
+    let with_variable ctx name =
+      { ctx with variables = (name, ref 0) :: ctx.variables }
+
+    let find_variable ctx name =
+      let rec find = function
+        | (var, r) :: _ when var = name -> r
+        | _ :: remaining -> find remaining
+        | [] -> raise (Unknow_variable name)
+      in
+      find ctx.variables
+
+    let get ctx name =
+      let r = find_variable ctx name in
+      !r
+
+    let set ctx name value =
+      let r = find_variable ctx name in
+      r := value
+  end
+end

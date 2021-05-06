@@ -26,13 +26,13 @@ let apply (f : bool -> bool -> bool) (lhs_info, lhs) (rhs_info, rhs) =
     let lhs = lhs ctx
     and rhs = rhs ctx
     in
-    fun (info : Interpreter_context.t) ->
-      (f (lhs info) (rhs info))
+    fun rt ->
+      (f (lhs rt) (rhs rt))
 
 module Eval_compiled =
 struct
-  let bool b = Compiler.Info.make(), fun _ _ -> b
+  let bool (b : bool) = Compiler.Info.make(), fun _ _ -> b
 
-  let ( && ) = apply ( && )
-  let ( || ) = apply ( || )
+  let ( && ) lhs rhs = apply ( && ) lhs rhs
+  let ( || ) lhs rhs = apply ( || ) lhs rhs
 end

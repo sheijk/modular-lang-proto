@@ -48,7 +48,7 @@ struct
   let get name =
     (Compiler.Info.make ()), fun ctx ->
       let store = Compiler.Context.find_variable ctx name in
-      fun (_ : Interpreter_context.t) ->
+      fun _ ->
         !store
 
   let set name (_v_info, value) (e_info, expr) =

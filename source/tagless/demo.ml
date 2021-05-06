@@ -50,7 +50,7 @@ end = struct
 end
 
 module Tester = Tester_f(Interpreter.Dynamic)
-module Tester_legacy = Tester_f(Interpreter_context)
+module Tester_legacy = Tester_f(Interpreter.No_runtime)
 
 module type Test_names =
 sig

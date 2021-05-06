@@ -30,8 +30,8 @@ Extending calc with conditional evaluation, loops, and booleans
 Extending a given language with conditional evaluation and loops
 ** DONE General language combination
 A system to combine fragments of languages to form new ones
-** TODO binding
-Define values and use them
+** DONE binding
+Define values and use them, for dynamic variables and compiled w/o runtime
 ** TODO More complex compiler analysis
 Constant folding, transformations
 ** TODO Source Location handling

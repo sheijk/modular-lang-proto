@@ -71,7 +71,7 @@ struct
       and true_ = true_ ctx
       and false_ = false_ ctx
       in
-      fun (ctx : Interpreter_context.t) ->
+      fun ctx ->
         if (condition ctx) then
           true_ ctx
         else
@@ -82,7 +82,7 @@ struct
     info, fun (ctx : Compiler.Context.t) ->
       let loop_index = ref 0 in
       let body = body @@ Compiler.Context.new_loop_index ctx loop_index in
-      fun (ctx : Interpreter_context.t) ->
+      fun ctx ->
         let rec loop index =
           loop_index := index;
           if index > 100 then
