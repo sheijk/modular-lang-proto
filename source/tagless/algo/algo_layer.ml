@@ -10,6 +10,8 @@ end
 
 module To_string =
 struct
+  include Empty.To_string
+
   let if_ condition true_ false_ =
     Printf.sprintf "(if %s then %s else %s)" condition true_ false_
 
@@ -20,9 +22,12 @@ struct
   let loop_index () =
     Printf.sprintf "loop_index"
 end
+let () = let module T : Lang = To_string in ()
 
 module Eval_generic(I : Interpreter.Loop) =
 struct
+  include Empty.Eval_generic(I)
+
   exception Loop_break of int
 
   let if_ condition true_ false_ = fun (ctx : I.t) ->
@@ -55,9 +60,12 @@ struct
 end
 
 module Eval = Eval_generic(Interpreter.Dynamic)
+let () = let module T : Lang = Eval in ()
 
 module Eval_compiled =
 struct
+  include Empty.Eval_compiled
+
   exception Loop_break of int
 
   let if_ (c_info, condition) (t_info, true_) (f_info, false_) =
@@ -109,6 +117,7 @@ struct
     | { Compiler.Context.loop_index = None; _ } ->
       failwith "index used outside of loop"
 end
+let () = let module T : Lang = Eval_compiled in ()
 
 module Count_ast_size =
 struct

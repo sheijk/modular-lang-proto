@@ -36,6 +36,8 @@ let () = let module T : Lang = struct include Empty.Eval include Eval end in ()
 
 module Eval_compiled =
 struct
+  include Empty.Eval_compiled
+
   let let_ name (_v_info, value) ((e_info : Compiler.Info.t), expr) =
     e_info, fun ctx ->
       let store = ref 0 in
@@ -60,6 +62,7 @@ struct
         store := value rt;
         expr rt
 end
+let () = let module T : Lang = Eval_compiled in ()
 
 module Count_ast_size =
 struct

@@ -9,10 +9,12 @@ struct
   type 'a t = string
 end
 
-module Eval =
+module Eval_generic(I : Interpreter.Empty) =
 struct
-  type 'a t = Interpreter.Dynamic.t -> 'a
+  type 'a t = I.t -> 'a
 end
+
+module Eval = Eval_generic(Interpreter.Dynamic)
 
 module Eval_compiled =
 struct

@@ -5,16 +5,18 @@ module type Lang = sig
 end
 
 module To_string = struct
-  type 'a t = string
+  include Empty.To_string
   include Calc_bool_layer.To_string
   include Algo_layer.To_string
 end
+let () = let module T : Lang = To_string in ()
 
 module Eval = struct
   include Empty.Eval
   include Calc_bool_layer.Eval
   include Algo_layer.Eval
 end
+let () = let module T : Lang = Eval in ()
 
 module Eval_compiled =
 struct

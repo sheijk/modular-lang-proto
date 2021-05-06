@@ -22,6 +22,7 @@ struct
   let ( <. ) = Printf.sprintf "(%s <. %s)"
   let ( >. ) = Printf.sprintf "(%s >. %s)"
 end
+let () = let module T : Lang = To_string in ()
 
 module Eval =
 struct
@@ -38,6 +39,7 @@ struct
   let ( <. ) lhs rhs = fun ctx -> (lhs ctx) < (rhs ctx)
   let ( >. ) lhs rhs = fun ctx -> (lhs ctx) > (rhs ctx)
 end
+let () = let module T : Lang = Eval in ()
 
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,

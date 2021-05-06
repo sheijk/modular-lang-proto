@@ -7,7 +7,7 @@ end
 
 module To_string =
 struct
-  type 'a t = string
+  include Empty.To_string
   include Calc_layer.To_string
   include Algo_layer.To_string
 end

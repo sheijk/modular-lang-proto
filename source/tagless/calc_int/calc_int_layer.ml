@@ -10,21 +10,27 @@ end
 
 module To_string =
 struct
+  include Empty.To_string
+
   let int = string_of_int
   let ( +. ) lhs rhs = Printf.sprintf "(%s +. %s)" lhs rhs
   let ( -. ) lhs rhs = Printf.sprintf "(%s -. %s)" lhs rhs
   let ( *. ) lhs rhs = Printf.sprintf "(%s *. %s)" lhs rhs
   let ( /. ) lhs rhs = Printf.sprintf "(%s /. %s)" lhs rhs
 end
+let () = let module T : Lang = To_string in ()
 
 module Eval =
 struct
+  include Empty.Eval
+
   let int n = fun _ -> n
   let ( +. ) lhs rhs = fun ctx -> (lhs ctx) + (rhs ctx)
   let ( -. ) lhs rhs = fun ctx -> (lhs ctx) - (rhs ctx)
   let ( *. ) lhs rhs = fun ctx -> (lhs ctx) * (rhs ctx)
   let ( /. ) lhs rhs = fun ctx -> (lhs ctx) / (rhs ctx)
 end
+let () = let module T : Lang = Eval in ()
 
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,
