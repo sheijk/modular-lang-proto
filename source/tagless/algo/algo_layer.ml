@@ -21,21 +21,21 @@ struct
     Printf.sprintf "loop_index"
 end
 
-module Eval =
+module Eval_generic(I : Interpreter.Loop) =
 struct
   exception Loop_break of int
 
-  let if_ condition true_ false_ = fun ctx ->
+  let if_ condition true_ false_ = fun (ctx : I.t) ->
     if (condition ctx) then
       true_ ctx
     else
       false_ ctx
 
-  let loop body = fun ctx ->
+  let loop body = fun (ctx : I.t) ->
     let rec loop index =
       if index > 100 then
         failwith "too many loop iterations";
-      ignore (body @@ Interpreter_context.with_index ctx index);
+      ignore (body @@ I.with_index ctx index);
       loop (index + 1)
     in
     try
@@ -46,12 +46,15 @@ struct
   let break value = fun ctx ->
     raise (Loop_break (value ctx))
 
-  let loop_index () = function
-    | { Interpreter_context.index = Some index; _ } ->
+  let loop_index () = fun (ctx : I.t) ->
+    match I.loop_index ctx with
+    | Some index ->
       index
-    | { Interpreter_context.index = None; _ } ->
+    | None ->
       failwith "index used outside of loop"
 end
+
+module Eval = Eval_generic(Interpreter.Dynamic)
 
 module Eval_compiled =
 struct

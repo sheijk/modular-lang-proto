@@ -11,7 +11,7 @@ end
 
 module Eval =
 struct
-  type 'a t = Interpreter_context.t -> 'a
+  type 'a t = Interpreter.Dynamic.t -> 'a
 end
 
 module Eval_compiled =

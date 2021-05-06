@@ -1,17 +1,22 @@
 
-module Tester : sig
+module Tester_stats =
+struct
+  let errors = ref 0
+  let total = ref 0
+end
+
+module Tester_f(I : Interpreter.Create) : sig
   val finish : unit -> unit
   val fail : string -> string -> string -> unit
   val ok : string -> string -> unit
   val run :
     string ->
     'a option ->
-    (Interpreter_context.t -> 'a) ->
+    (I.t -> 'a) ->
     ('a -> string) ->
     unit
 end = struct
-  let errors = ref 0
-  let total = ref 0
+  include Tester_stats
 
   let finish () =
     if ((!errors) > 0) then begin
@@ -34,7 +39,7 @@ end = struct
 
   let run string expected f to_string =
     let result =
-      try Some (f (Interpreter_context.make ()))
+      try Some (f (I.make ()))
       with _ -> None
     in
     let to_result_str = to_result_str to_string in
@@ -43,6 +48,9 @@ end = struct
     else
       fail string (to_result_str expected) (to_result_str result)
 end
+
+module Tester = Tester_f(Interpreter.Dynamic)
+module Tester_legacy = Tester_f(Interpreter_context)
 
 module type Test_names =
 sig
@@ -53,7 +61,7 @@ end
 
 module type Test_cases =
 sig
-  type 'a t = Interpreter_context.t -> 'a
+  type 'a t = Interpreter.Dynamic.t -> 'a
   val int_tests : (int option * int t) list
   val bool_tests : (bool option * bool t) list
 end
@@ -273,6 +281,9 @@ struct
     let module B = Tests_algo_bindings(L) in
     C.int_tests @ B.int_tests @ L.[
       None, if_ (bool false) (loop_index()) (int 0);
+      None,
+      let_ "x" (int 10)
+        (get "x" +. get "y")
     ]
 end
 
@@ -288,10 +299,10 @@ let test_algo_compiled () =
       f ctx
   in
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester.run string expected (check_and_run info f) string_of_bool)
+      Tester_legacy.run string expected (check_and_run info f) string_of_bool)
     P.bool_tests C.bool_tests;
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester.run string expected (check_and_run info f) string_of_int)
+      Tester_legacy.run string expected (check_and_run info f) string_of_int)
     P.int_tests C.int_tests
 
 let () =
