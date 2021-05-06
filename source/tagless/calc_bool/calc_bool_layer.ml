@@ -36,3 +36,13 @@ struct
   let ( && ) lhs rhs = apply ( && ) lhs rhs
   let ( || ) lhs rhs = apply ( || ) lhs rhs
 end
+
+module Count_ast_size =
+struct
+  type 'a t = int
+
+  let bool _ = 1
+  let ( && ) lhs rhs = lhs + rhs + 1
+  let ( || ) lhs rhs = lhs + rhs + 1
+end
+let () = let module T : Lang = Count_ast_size in ()

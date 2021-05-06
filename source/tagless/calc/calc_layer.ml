@@ -72,3 +72,19 @@ struct
 end
 let () = let module T : Lang = Eval_compiled in ()
 
+let add_plus_one lhs rhs = lhs + rhs + 1
+
+module Count_ast_size =
+struct
+  include Empty.Count_ast_size
+  include Calc_bool_layer.Count_ast_size
+  include Calc_int_layer.Count_ast_size
+
+  let int_to_float value = value + 1
+  let float_to_int value = value + 1
+
+  let ( =. ) = add_plus_one
+  let ( <. ) = add_plus_one
+  let ( >. ) = add_plus_one
+end
+let () = let module T : Lang = Count_ast_size in ()

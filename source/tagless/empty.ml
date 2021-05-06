@@ -19,3 +19,7 @@ struct
   type 'a t = Compiler.Info.t * (Compiler.Context.t -> Interpreter.No_runtime.t -> 'a)
 end
 
+module Count_ast_size =
+struct
+  type 'a t = int
+end

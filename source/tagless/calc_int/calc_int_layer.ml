@@ -48,3 +48,17 @@ struct
 end
 let () = let module T : Lang = Eval_compiled in ()
 
+let add_plus_one lhs rhs = lhs + rhs + 1
+
+module Count_ast_size =
+struct
+  type 'a t = int
+
+  let int _ = 1
+
+  let ( +. ) = add_plus_one
+  let ( -. ) = add_plus_one
+  let ( *. ) = add_plus_one
+  let ( /. ) = add_plus_one
+end
+let () = let module T : Lang = Count_ast_size in ()

@@ -110,3 +110,13 @@ struct
       failwith "index used outside of loop"
 end
 
+module Count_ast_size =
+struct
+  type 'a t = int
+
+  let if_ condition true_ false_ = condition + true_ + false_ + 1
+  let loop body = body + 1
+  let break value = value + 1
+  let loop_index () = 1
+end
+let () = let module T : Lang = Count_ast_size in ()

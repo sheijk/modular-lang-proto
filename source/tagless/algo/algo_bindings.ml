@@ -32,3 +32,12 @@ struct
   include Bindings_layer.Eval_compiled
 end
 let () = let module T : Lang = Eval_compiled in ()
+
+module Count_ast_size =
+struct
+  include Empty.Count_ast_size
+  include Calc_layer.Count_ast_size
+  include Algo_layer.Count_ast_size
+  include Bindings_layer.Count_ast_size
+end
+let () = let module T : Lang = Count_ast_size in ()
