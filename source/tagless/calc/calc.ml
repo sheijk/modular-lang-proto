@@ -67,35 +67,9 @@ struct
 end
 let () = let module T : Lang = Count_ast_size in ()
 
-
-module Static_value =
-struct
-  type t = {
-    known_int : int option;
-    known_bool : bool option;
-  }
-
-  let to_string = function
-    | { known_int = None; known_bool = None } -> "dynamic"
-    | { known_int = Some i; known_bool = None } -> string_of_int i
-    | { known_int = None; known_bool = Some b } -> string_of_bool b
-    | { known_int = Some _; known_bool = Some _ } -> "invalid, internal error"
-
-  let is_known = function
-    | { known_bool = Some _; _ }
-    | { known_int = Some _; _ } ->
-      true
-    | _ ->
-      false
-
-  let unknown = { known_int = None; known_bool = None; }
-
-  let bool b = { unknown with known_bool = Some b; }
-  let int i = { unknown with known_int = Some i; }
-end
-
 module Optimize(L : Lang) =
 struct
+  module Static_value = Compiler.Static_value
   type 'a t = Static_value.t * 'a L.t
 
   let with_l f_info f_l = fun (lhs_info, lhs) (rhs_info, rhs) ->
