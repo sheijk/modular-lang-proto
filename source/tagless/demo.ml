@@ -3,27 +3,6 @@ module Tester_stats =
 struct
   let errors = ref 0
   let total = ref 0
-end
-
-module Tester_f(I : Interpreter.Create) : sig
-  val finish : unit -> unit
-  val fail : string -> string -> string -> unit
-  val ok : string -> string -> unit
-  val run :
-    string ->
-    'a option ->
-    (I.t -> 'a) ->
-    ('a -> string) ->
-    unit
-end = struct
-  include Tester_stats
-
-  let finish () =
-    if ((!errors) > 0) then begin
-      Printf.printf "%d tests run, %d tests failed" (!total) (!errors);
-      exit 1
-    end else
-      Printf.printf "%d tests run\n" (!total)
 
   let fail testcase expected result =
     incr total;
@@ -33,6 +12,27 @@ end = struct
   let ok testcase result =
     incr total;
     Printf.printf "  ok %s => %s\n" testcase result
+
+  let finish () =
+    if ((!errors) > 0) then begin
+      Printf.printf "%d tests run, %d tests failed" (!total) (!errors);
+      exit 1
+    end else
+      Printf.printf "%d tests run\n" (!total)
+end
+
+module Tester_f(I : Interpreter.Create) : sig
+  val finish : unit -> unit
+  val run :
+    string ->
+    'a option ->
+    (I.t -> 'a) ->
+    ('a -> string) ->
+    unit
+end = struct
+  include Tester_stats
+
+  let finish = Tester_stats.finish
 
   let to_result_str f opt =
     Option.value ~default:"error" @@ Option.map f opt
@@ -180,16 +180,6 @@ let test_combined() =
   in
   T.run "Calc"
 
-let test_calc_optimized() =
-  let module S = Tests_combined(Calc.To_string) in
-  let module O = Tests_combined(Calc.Optimize(Calc.To_string)) in
-  let print (_, unoptimized) (_, (info, optimized)) =
-    Printf.printf "  opt %s to %s%s\n" unoptimized optimized
-      (if Calc.Static_value.is_known info then "" else " failed to infer value")
-  in
-  List.iter2 print S.bool_tests O.bool_tests;
-  List.iter2 print S.int_tests O.int_tests;
-
 module Tests_algo(L : Algo_calc.Lang) =
 struct
   type 'a t = 'a L.t
@@ -258,9 +248,13 @@ struct
   type 'a t = 'a L.t
   module I = Interpreter.Dynamic
 
-  let bool_tests = []
+  let bool_tests =
+    let module C = Tests_algo(L) in
+    C.bool_tests @ []
 
-  let int_tests = L.[
+  let int_tests =
+    let module C = Tests_algo(L) in
+    C.int_tests @ L.[
       Some 99, let_ "foo" (int 99) (get "foo");
       Some 123,
       let_ "foo" (int (-1))
@@ -291,14 +285,12 @@ struct
   type 'a t = 'a L.t
 
   let bool_tests =
-    let module C = Tests_algo(L) in
     let module B = Tests_algo_bindings(L) in
-    C.bool_tests @ B.bool_tests @ []
+    B.bool_tests @ []
 
   let int_tests =
-    let module C = Tests_algo(L) in
     let module B = Tests_algo_bindings(L) in
-    C.int_tests @ B.int_tests @ L.[
+    B.int_tests @ L.[
       None, if_ (bool false) (loop_index()) (int 0);
       None,
       let_ "x" (int 10)
@@ -323,6 +315,91 @@ let test_algo_compiled () =
   List.iter2 (fun (expected, string) (_, (info, f)) ->
       Tester_legacy.run string expected (check_and_run info f) string_of_int)
     P.int_tests C.int_tests
+
+module Tests_algo_optimize(L : Algo_bindings.Lang) =
+struct
+  type 'a t = 'a L.t
+
+  let bool_tests = L.[
+      Some true, bool true;
+      Some false, bool false;
+
+      Some true, bool false || bool true;
+      Some true, bool true || bool false;
+      Some false, bool false || bool false;
+      Some true, bool true && bool true;
+      Some false, bool true && bool false;
+
+      Some true, bool true && (bool true || bool false);
+      Some false, bool true && bool false || bool false && bool true;
+
+      Some false, int 3 =. int 4;
+      Some false, int 3 >. int 3;
+      Some false, int 4 >. int 10;
+      Some true, int 3 =. int 3;
+      Some true, int 3 >. int (-10);
+      Some true, int 4 <. int 10;
+    ]
+
+  let int_tests = L.[
+      Some 1, int 1;
+      Some 5, int 10 /. int 2;
+      Some 10, int 3 +. int 7;
+      Some 15, int 10 +. int 5;
+
+      Some 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+
+      Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
+      None, loop (int 0);
+      None, loop (int 1);
+      None, break (int 3);
+      None, loop (break (int 10));
+      None, loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1));
+      Some 2, if_ (bool false) (int 1) (int 2);
+      Some 1, if_ (bool true) (int 1) (int 2);
+      Some 22, if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20);
+      Some 11, if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20);
+      Some 1, if_ (bool true) (int 1) (int 999);
+
+      Some 5, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
+      None, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
+
+      None, let_ "foo" (int 99) (get "foo");
+      None,
+      let_ "foo" (int (-1))
+        (get "foo" +.
+         let_ "foo" (int 24)
+           (int 100 +. get "foo"));
+
+      None,
+      let_ "sum" (int 0)
+        (loop
+           (set "sum" (loop_index() *. loop_index() +. get "sum")
+              (if_ (get "sum" >. int 10)
+                 (break (get "sum"))
+                 (int 1))))
+    ]
+end
+
+let test_calc_optimized() =
+  print_endline "Testing Algo_bindings optimization";
+  let module S = Tests_algo_optimize(Algo_bindings.To_string) in
+  let module O = Tests_algo_optimize(Algo_bindings.Optimize(Algo_bindings.To_string)) in
+  let print (_, unoptimized) (expect, (info, optimized)) =
+    match expect, Compiler.Static_value.is_known info with
+    | Some _, true
+    | None, false ->
+      Tester_stats.ok unoptimized optimized
+      (* Printf.printf "  opt %s to %s\n" unoptimized optimized *)
+    | None, true ->
+      Tester_stats.fail unoptimized "not to infer value" optimized
+      (* Printf.printf "  err-opt %s to %s, inferred value but shouldn't\n" unoptimized optimized *)
+    | Some _, false ->
+      Tester_stats.fail unoptimized "to infer value" optimized
+      (* Printf.printf "  err-opt %s to %s, failed to infer value\n" unoptimized optimized *)
+  in
+  List.iter2 print S.bool_tests O.bool_tests;
+  List.iter2 print S.int_tests O.int_tests
 
 let () =
   test_bool ();
