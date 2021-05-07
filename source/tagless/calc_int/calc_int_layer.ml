@@ -20,9 +20,9 @@ struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval =
+module Eval(I : Interpreter.Empty) =
 struct
-  include Empty.Eval
+  include Empty.Eval(I)
 
   let int n = fun _ -> n
   let ( +. ) lhs rhs = fun ctx -> (lhs ctx) + (rhs ctx)
@@ -30,7 +30,7 @@ struct
   let ( *. ) lhs rhs = fun ctx -> (lhs ctx) * (rhs ctx)
   let ( /. ) lhs rhs = fun ctx -> (lhs ctx) / (rhs ctx)
 end
-let () = let module T : Lang = Eval in ()
+let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,

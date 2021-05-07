@@ -8,9 +8,9 @@ struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval =
+module Eval(I : Interpreter.Empty) =
 struct
-  include Empty.Eval
-  include Calc_bool_layer.Eval
+  include Empty.Eval(I)
+  include Calc_bool_layer.Eval(I)
 end
-let () = let module T : Lang = Eval in ()
+let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()

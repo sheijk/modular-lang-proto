@@ -17,8 +17,10 @@ struct
 end
 let () = let module T : Lang = struct include Empty.To_string include To_string end in ()
 
-module Eval_f(I : Interpreter.Variables) =
+module Eval(I : Interpreter.Variables) =
 struct
+  include Empty.Eval(I)
+
   let let_ name value expr = fun ctx ->
     let ctx' = I.with_variable ctx name in
     I.set ctx' name (value ctx);
@@ -31,8 +33,7 @@ struct
     I.set ctx name (value ctx);
     expr ctx
 end
-module Eval = Eval_f(Interpreter.Dynamic)
-let () = let module T : Lang = struct include Empty.Eval include Eval end in ()
+let () = let module T : Lang = Eval(Interpreter.Dynamic) in ()
 
 module Eval_compiled =
 struct

@@ -11,12 +11,12 @@ module To_string = struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval = struct
-  include Empty.Eval
-  include Calc_bool_layer.Eval
-  include Algo_layer.Eval
+module Eval(I : Interpreter.Loop) = struct
+  include Empty.Eval(I)
+  include Calc_bool_layer.Eval(I)
+  include Algo_layer.Eval(I)
 end
-let () = let module T : Lang = Eval in ()
+let () = let module T : Lang = Eval(Interpreter.Dynamic) in ()
 
 module Eval_compiled =
 struct

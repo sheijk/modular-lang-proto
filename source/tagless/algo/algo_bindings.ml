@@ -15,14 +15,14 @@ struct
 end
 let () = let module T : Algo_layer.Lang = To_string in ()
 
-module Eval =
+module Eval(I : Interpreter.All) =
 struct
-  include Empty.Eval
-  include Calc_layer.Eval
-  include Algo_layer.Eval
-  include Bindings_layer.Eval
+  include Empty.Eval(I)
+  include Calc_layer.Eval(I)
+  include Algo_layer.Eval(I)
+  include Bindings_layer.Eval(I)
 end
-let () = let module T : Algo_layer.Lang = Eval in ()
+let () = let module T : Algo_layer.Lang = Eval(Interpreter.Dynamic) in ()
 
 module Eval_compiled =
 struct

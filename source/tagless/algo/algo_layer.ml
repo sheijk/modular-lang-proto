@@ -24,9 +24,9 @@ struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval_generic(I : Interpreter.Loop) =
+module Eval(I : Interpreter.Loop) =
 struct
-  include Empty.Eval_generic(I)
+  include Empty.Eval(I)
 
   exception Loop_break of int
 
@@ -58,9 +58,7 @@ struct
     | None ->
       failwith "index used outside of loop"
 end
-
-module Eval = Eval_generic(Interpreter.Dynamic)
-let () = let module T : Lang = Eval in ()
+let () = let module T : Lang = Eval(Interpreter.Dynamic) in ()
 
 module Eval_compiled =
 struct

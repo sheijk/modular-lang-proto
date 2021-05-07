@@ -61,7 +61,9 @@ end
 
 module type Test_cases =
 sig
-  type 'a t = Interpreter.Dynamic.t -> 'a
+  module I : Interpreter.Create
+
+  type 'a t = I.t -> 'a
   val int_tests : (int option * int t) list
   val bool_tests : (bool option * bool t) list
 end
@@ -69,6 +71,7 @@ end
 module Test_runner(C : Test_names)(E : Test_cases) =
 struct
   let run case_name =
+    let module Tester = Tester_f(E.I) in
     Printf.printf "Testing %s\n" case_name;
     List.iter2 (fun (expected, string) (_, f) ->
         Tester.run string expected f string_of_int)
@@ -81,6 +84,7 @@ end
 module Tests_int(L : Calc_int_layer.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.No_runtime
 
   let int_tests = L.[
       Some 3, int 1 +. int 2;
@@ -96,13 +100,14 @@ let test_int() =
   let module T =
     Test_runner
       (Tests_int(Calc_int.To_string))
-      (Tests_int(Calc_int.Eval))
+      (Tests_int(Calc_int.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_int"
 
 module Tests_bool(L : Calc_bool_layer.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.No_runtime
 
   let bool_tests = L.[
       Some true, bool true;
@@ -123,13 +128,14 @@ let test_bool () =
   let module T =
     Test_runner
       (Tests_bool(Calc_bool.To_string))
-      (Tests_bool(Calc_bool.Eval))
+      (Tests_bool(Calc_bool.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_bool"
 
 module Tests_combined(L : Calc_layer.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.No_runtime
 
   let int_tests =
     let module Ci = Tests_int(L) in
@@ -170,13 +176,14 @@ let test_combined() =
   let module T =
     Test_runner
       (Tests_combined(Calc.To_string))
-      (Tests_combined(Calc.Eval))
+      (Tests_combined(Calc.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc"
 
 module Tests_algo(L : Algo_calc.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.Dynamic
 
   let int_tests =
     let module C = Tests_combined(L) in
@@ -208,13 +215,14 @@ let test_algo() =
   let module T =
     Test_runner
       (Tests_algo(Algo_calc.To_string))
-      (Tests_algo(Algo_calc.Eval))
+      (Tests_algo(Algo_calc.Eval(Interpreter.Dynamic)))
   in
   T.run "Algo_calc"
 
 module Tests_algo_bool(L : Algo_bool.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.Dynamic
 
   let bool_tests =
     L.[
@@ -231,13 +239,14 @@ let test_algo_bool() =
   let module T =
     Test_runner
       (Tests_algo_bool(Algo_bool.To_string))
-      (Tests_algo_bool(Algo_bool.Eval))
+      (Tests_algo_bool(Algo_bool.Eval(Interpreter.Dynamic)))
   in
   T.run "Algo_bool"
 
 module Tests_algo_bindings(L : Algo_bindings.Lang) =
 struct
   type 'a t = 'a L.t
+  module I = Interpreter.Dynamic
 
   let bool_tests = []
 
@@ -263,7 +272,7 @@ let test_algo_bindings () =
   let module T =
     Test_runner
       (Tests_algo_bindings(Algo_bindings.To_string))
-      (Tests_algo_bindings(Algo_bindings.Eval))
+      (Tests_algo_bindings(Algo_bindings.Eval(Interpreter.Dynamic)))
   in
   T.run "Algo_bindings"
 

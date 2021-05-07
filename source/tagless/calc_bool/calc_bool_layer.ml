@@ -16,15 +16,15 @@ struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval =
+module Eval(I : Interpreter.Empty) =
 struct
-  include Empty.Eval
+  include Empty.Eval(I)
 
   let bool b = fun _ -> b
   let ( && ) lhs rhs = fun ctx -> ((lhs ctx) && (rhs ctx))
   let ( || ) lhs rhs = fun ctx -> ((lhs ctx) || (rhs ctx))
 end
-let () = let module T : Lang = Eval in ()
+let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 
 let apply (f : bool -> bool -> bool) (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,
