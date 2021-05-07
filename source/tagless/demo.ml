@@ -180,6 +180,15 @@ let test_combined() =
   in
   T.run "Calc"
 
+let test_calc_optimized() =
+  let module S = Tests_combined(Calc.To_string) in
+  let module O = Tests_combined(Calc.Optimize(Calc.To_string)) in
+  let print (_, unoptimized) (_, (info, optimized)) =
+    Printf.printf "  opt %s to %s, %s\n" unoptimized optimized @@ Calc.Static_value.to_string info
+  in
+  List.iter2 print S.bool_tests O.bool_tests;
+  List.iter2 print S.int_tests O.int_tests;
+
 module Tests_algo(L : Algo_calc.Lang) =
 struct
   type 'a t = 'a L.t
@@ -321,6 +330,7 @@ let () =
   test_algo ();
   test_algo_bool ();
   test_algo_bindings ();
-  test_algo_compiled();
+  test_algo_compiled ();
+  test_calc_optimized ();
   Tester.finish ()
 
