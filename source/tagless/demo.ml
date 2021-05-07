@@ -81,7 +81,7 @@ struct
       C.bool_tests E.bool_tests
 end
 
-module Tests_int(L : Calc_int_layer.Lang) =
+module Tests_int(L : Calc_int.Lang) =
 struct
   type 'a t = 'a L.t
   module I = Interpreter.No_runtime
@@ -99,12 +99,12 @@ end
 let test_int() =
   let module T =
     Test_runner
-      (Tests_int(Calc_int_layer.To_string))
-      (Tests_int(Calc_int_layer.Eval(Interpreter.No_runtime)))
+      (Tests_int(Calc_int.To_string))
+      (Tests_int(Calc_int.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_int"
 
-module Tests_bool(L : Calc_bool_layer.Lang) =
+module Tests_bool(L : Calc_bool.Lang) =
 struct
   type 'a t = 'a L.t
   module I = Interpreter.No_runtime
@@ -127,12 +127,12 @@ end
 let test_bool () =
   let module T =
     Test_runner
-      (Tests_bool(Calc_bool_layer.To_string))
-      (Tests_bool(Calc_bool_layer.Eval(Interpreter.No_runtime)))
+      (Tests_bool(Calc_bool.To_string))
+      (Tests_bool(Calc_bool.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_bool"
 
-module Tests_combined(L : Calc_layer.Lang) =
+module Tests_combined(L : Calc.Lang) =
 struct
   type 'a t = 'a L.t
   module I = Interpreter.No_runtime
@@ -175,8 +175,8 @@ end
 let test_combined() =
   let module T =
     Test_runner
-      (Tests_combined(Calc_layer.To_string))
-      (Tests_combined(Calc_layer.Eval(Interpreter.No_runtime)))
+      (Tests_combined(Calc.To_string))
+      (Tests_combined(Calc.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc"
 

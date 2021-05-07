@@ -1,8 +1,8 @@
 module type Lang =
 sig
   type 'a t
-  include Calc_int_layer.Lang with type 'a t := 'a t
-  include Calc_bool_layer.Lang with type 'a t := 'a t
+  include Calc_int.Lang with type 'a t := 'a t
+  include Calc_bool.Lang with type 'a t := 'a t
 
   val int_to_float : int t -> float t
   val float_to_int : float t -> int t
@@ -13,8 +13,8 @@ end
 
 module To_string =
 struct
-  include Calc_int_layer.To_string
-  include Calc_bool_layer.To_string
+  include Calc_int.To_string
+  include Calc_bool.To_string
 
   let int_to_float = Printf.sprintf "(int_to_float %s)"
   let float_to_int = Printf.sprintf "(float_to_int %s)"
@@ -27,8 +27,8 @@ let () = let module T : Lang = To_string in ()
 module Eval(I : Interpreter.Empty) =
 struct
   include Empty.Eval(I)
-  include Calc_bool_layer.Eval(I)
-  include Calc_int_layer.Eval(I)
+  include Calc_bool.Eval(I)
+  include Calc_int.Eval(I)
 
   let int_to_float value =
     fun ctx -> float_of_int (value ctx)
@@ -54,8 +54,8 @@ let apply f (lhs_info, lhs) (rhs_info, rhs) =
 module Eval_compiled =
 struct
   include Empty.Eval_compiled
-  include Calc_bool_layer.Eval_compiled
-  include Calc_int_layer.Eval_compiled
+  include Calc_bool.Eval_compiled
+  include Calc_int.Eval_compiled
 
   let int_to_float (context, value) =
     context,
@@ -80,8 +80,8 @@ let add_plus_one lhs rhs = lhs + rhs + 1
 module Count_ast_size =
 struct
   include Empty.Count_ast_size
-  include Calc_bool_layer.Count_ast_size
-  include Calc_int_layer.Count_ast_size
+  include Calc_bool.Count_ast_size
+  include Calc_int.Count_ast_size
 
   let int_to_float value = value + 1
   let float_to_int value = value + 1
