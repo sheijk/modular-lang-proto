@@ -99,8 +99,8 @@ end
 let test_int() =
   let module T =
     Test_runner
-      (Tests_int(Calc_int.To_string))
-      (Tests_int(Calc_int.Eval(Interpreter.No_runtime)))
+      (Tests_int(Calc_int_layer.To_string))
+      (Tests_int(Calc_int_layer.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_int"
 
@@ -127,8 +127,8 @@ end
 let test_bool () =
   let module T =
     Test_runner
-      (Tests_bool(Calc_bool.To_string))
-      (Tests_bool(Calc_bool.Eval(Interpreter.No_runtime)))
+      (Tests_bool(Calc_bool_layer.To_string))
+      (Tests_bool(Calc_bool_layer.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc_bool"
 
@@ -175,8 +175,8 @@ end
 let test_combined() =
   let module T =
     Test_runner
-      (Tests_combined(Calc.To_string))
-      (Tests_combined(Calc.Eval(Interpreter.No_runtime)))
+      (Tests_combined(Calc_layer.To_string))
+      (Tests_combined(Calc_layer.Eval(Interpreter.No_runtime)))
   in
   T.run "Calc"
 
