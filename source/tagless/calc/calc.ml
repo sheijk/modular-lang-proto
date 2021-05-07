@@ -4,8 +4,6 @@ sig
   include Calc_int.Lang with type 'a t := 'a t
   include Calc_bool.Lang with type 'a t := 'a t
 
-  val int_to_float : int t -> float t
-  val float_to_int : float t -> int t
   val ( =. ) : int t -> int t -> bool t
   val ( <. ) : int t -> int t -> bool t
   val ( >. ) : int t -> int t -> bool t
@@ -16,8 +14,6 @@ struct
   include Calc_int.To_string
   include Calc_bool.To_string
 
-  let int_to_float = Printf.sprintf "(int_to_float %s)"
-  let float_to_int = Printf.sprintf "(float_to_int %s)"
   let ( =. ) = Printf.sprintf "(%s =. %s)"
   let ( <. ) = Printf.sprintf "(%s <. %s)"
   let ( >. ) = Printf.sprintf "(%s >. %s)"
@@ -29,12 +25,6 @@ struct
   include Empty.Eval(I)
   include Calc_bool.Eval(I)
   include Calc_int.Eval(I)
-
-  let int_to_float value =
-    fun ctx -> float_of_int (value ctx)
-
-  let float_to_int value =
-    fun ctx -> int_of_float (value ctx)
 
   let ( =. ) lhs rhs = fun ctx -> (lhs ctx) = (rhs ctx)
   let ( <. ) lhs rhs = fun ctx -> (lhs ctx) < (rhs ctx)
@@ -57,18 +47,6 @@ struct
   include Calc_bool.Eval_compiled
   include Calc_int.Eval_compiled
 
-  let int_to_float (context, value) =
-    context,
-    fun ctx ->
-      let value = value ctx in
-      fun ctx -> float_of_int (value ctx)
-
-  let float_to_int (context, value) =
-    context,
-    fun ctx ->
-      let value = value ctx in
-      fun ctx -> int_of_float (value ctx)
-
   let ( =. ) = apply ( = )
   let ( <. ) = apply ( < )
   let ( >. ) = apply ( > )
@@ -82,9 +60,6 @@ struct
   include Empty.Count_ast_size
   include Calc_bool.Count_ast_size
   include Calc_int.Count_ast_size
-
-  let int_to_float value = value + 1
-  let float_to_int value = value + 1
 
   let ( =. ) = add_plus_one
   let ( <. ) = add_plus_one
