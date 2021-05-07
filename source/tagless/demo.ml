@@ -184,7 +184,8 @@ let test_calc_optimized() =
   let module S = Tests_combined(Calc.To_string) in
   let module O = Tests_combined(Calc.Optimize(Calc.To_string)) in
   let print (_, unoptimized) (_, (info, optimized)) =
-    Printf.printf "  opt %s to %s, %s\n" unoptimized optimized @@ Calc.Static_value.to_string info
+    Printf.printf "  opt %s to %s%s\n" unoptimized optimized
+      (if Calc.Static_value.is_known info then "" else " failed to infer value")
   in
   List.iter2 print S.bool_tests O.bool_tests;
   List.iter2 print S.int_tests O.int_tests;

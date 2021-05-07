@@ -81,23 +81,17 @@ struct
     | { known_int = None; known_bool = Some b } -> string_of_bool b
     | { known_int = Some _; known_bool = Some _ } -> "invalid, internal error"
 
+  let is_known = function
+    | { known_bool = Some _; _ }
+    | { known_int = Some _; _ } ->
+      true
+    | _ ->
+      false
+
   let unknown = { known_int = None; known_bool = None; }
+
   let bool b = { unknown with known_bool = Some b; }
   let int i = { unknown with known_int = Some i; }
-
-  let combine_int f a b =
-    match a, b with
-    | { known_int = Some a_val; _ }, { known_int = Some b_val; _ } ->
-      f a_val b_val
-    | _, _ ->
-      unknown
-
-  let combine_bool f a b =
-    match a, b with
-    | { known_bool = Some a_val; _ }, { known_bool = Some b_val; _ } ->
-      f a_val b_val
-    | _, _ ->
-      unknown
 end
 
 module Optimize(L : Lang) =
@@ -107,23 +101,40 @@ struct
   let with_l f_info f_l = fun (lhs_info, lhs) (rhs_info, rhs) ->
     f_info lhs_info rhs_info, f_l lhs rhs
 
-  let int_pred f = Static_value.combine_int (fun lhs rhs -> Static_value.bool (f lhs rhs))
-  let int_op f = Static_value.combine_int (fun lhs rhs -> Static_value.int (f lhs rhs))
-  let bool_pred f = Static_value.combine_bool (fun lhs rhs -> Static_value.bool (f lhs rhs))
-
   let bool b = Static_value.bool b, L.bool b
   let int i = Static_value.int i, L.int i
 
-  let ( >. ) = with_l (int_pred (>)) L.((>.))
-  let ( <. ) = with_l (int_pred (<)) L.((<.))
-  let ( =. ) = with_l (int_pred (=)) L.((=.))
+  let combine_int l_value s_value pred l_op (lhs_info, lhs) (rhs_info, rhs) =
+    let module S = Static_value in
+    match lhs_info, rhs_info with
+    | { S.known_int = Some a_val; _ }, { S.known_int = Some b_val; _ } ->
+      let result = pred a_val b_val in
+      s_value result, l_value result
+    | _, _ ->
+      S.unknown, l_op lhs rhs
 
-  let ( && ) lhs rhs = with_l (bool_pred ( && )) L.( && ) lhs rhs
-  let ( || ) lhs rhs = with_l (bool_pred ( || )) L.( || ) lhs rhs
+  let combine_int_pred = combine_int L.bool Static_value.bool
+  let combine_int_f = combine_int L.int Static_value.int
 
-  let ( +. ) lhs rhs = with_l (int_op ( + )) L.( +. ) lhs rhs
-  let ( -. ) lhs rhs = with_l (int_op ( - )) L.( -. ) lhs rhs
-  let ( *. ) lhs rhs = with_l (int_op ( * )) L.( *. ) lhs rhs
-  let ( /. ) lhs rhs = with_l (int_op ( / )) L.( /. ) lhs rhs
+  let combine_bool_pred pred l_op (lhs_info, lhs) (rhs_info, rhs) =
+    let module S = Static_value in
+    match lhs_info, rhs_info with
+    | { S.known_bool = Some a_val; _ }, { S.known_bool = Some b_val; _ } ->
+      let result = pred a_val b_val in
+      Static_value.bool result, L.bool result
+    | _, _ ->
+      S.unknown, l_op lhs rhs
+
+  let ( >. ) = combine_int_pred ( > ) L.( >. )
+  let ( <. ) = combine_int_pred ( < ) L.( <. )
+  let ( =. ) = combine_int_pred ( = ) L.( =. )
+
+  let ( && ) = combine_bool_pred ( && ) L.( && )
+  let ( || ) = combine_bool_pred ( || ) L.( || )
+
+  let ( +. ) = combine_int_f ( + ) L.( +. )
+  let ( -. ) = combine_int_f ( - ) L.( -. )
+  let ( *. ) = combine_int_f ( * ) L.( *. )
+  let ( /. ) = combine_int_f ( / ) L.( /. )
 end
 let () = let module T : Lang = Optimize(Count_ast_size) in ()
