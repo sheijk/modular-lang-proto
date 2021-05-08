@@ -27,3 +27,9 @@ struct
   type 'a t = int
 end
 let () = let module T : Lang = Count_ast_size in ()
+
+module Optimize(L : Lang) =
+struct
+  type 'a t = Compiler.Static_value.t * 'a L.t
+end
+let () = let module T : Lang = Optimize(Count_ast_size) in ()

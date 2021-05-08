@@ -74,3 +74,13 @@ struct
   let set _name value expr = value + expr + 1
 end
 let () = let module T : Lang = Count_ast_size in ()
+
+module Optimize(L : Lang) =
+struct
+  include Empty.Optimize(L)
+
+  let set name (_, value) (next_info, next) = next_info, L.set name value next
+  let get name = Compiler.Static_value.unknown, L.get name
+  let let_ name (_, value) (expr_info, expr) = expr_info, L.let_ name value expr
+end
+let () = let module T : Lang = Optimize(Count_ast_size) in ()

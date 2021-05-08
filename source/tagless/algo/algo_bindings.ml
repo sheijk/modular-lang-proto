@@ -44,31 +44,9 @@ let () = let module T : Lang = Count_ast_size in ()
 
 module Optimize(L : Lang) =
 struct
+  include Empty.Optimize(L)
   include Calc.Optimize(L)
-
-  let set name (_, value) (next_info, next) = next_info, L.set name value next
-  let get name = Static_value.unknown, L.get name
-  let let_ name (_, value) (expr_info, expr) = expr_info, L.let_ name value expr
-
-  let loop (_, body) = Static_value.unknown, L.loop body
-  let loop_index () = Static_value.unknown, L.loop_index ()
-  let break (_, expr) = Static_value.unknown, L.break expr
-
-  let if_ (condition_info, condition) (lhs_info, lhs) (rhs_info, rhs) =
-    match condition_info, lhs_info, rhs_info with
-    | { Compiler.Static_value.known_bool = Some b; _ }, _, _ ->
-      if b then
-        lhs_info, lhs
-      else
-        rhs_info, rhs
-    | { Compiler.Static_value.known_terminates = true; _ },
-      { Compiler.Static_value.known_int = Some l_value; _ },
-      { Compiler.Static_value.known_int = Some r_value; _ } ->
-      if l_value = r_value then
-        lhs_info, lhs
-      else
-        Static_value.unknown, L.if_ condition lhs rhs
-    | _ ->
-      Static_value.unknown, L.if_ condition lhs rhs
+  include Algo.Optimize(L)
+  include Bindings.Optimize(L)
 end
 let () = let module T : Lang = Optimize(Count_ast_size) in ()

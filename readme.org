@@ -32,7 +32,7 @@ Extending a given language with conditional evaluation and loops
 A system to combine fragments of languages to form new ones
 ** DONE binding
 Define values and use them, for dynamic variables and compiled w/o runtime
-** TODO More complex compiler analysis
+** DONE More complex compiler analysis
 Constant folding, transformations
 ** TODO Source Location handling
 Track source locations and use them for error reporting
