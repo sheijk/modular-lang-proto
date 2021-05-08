@@ -10,7 +10,7 @@ module To_string =
 struct
   include Empty.To_string
 
-  let bool b = if b then "true" else "false"
+  let bool b = if b then "(bool true)" else "(bool false)"
   let ( && ) lhs rhs = Printf.sprintf "(%s && %s)" lhs rhs
   let ( || ) lhs rhs = Printf.sprintf "(%s || %s)" lhs rhs
 end

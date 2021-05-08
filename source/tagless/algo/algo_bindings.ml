@@ -61,7 +61,7 @@ struct
         lhs_info, lhs
       else
         rhs_info, rhs
-    | _,
+    | { Compiler.Static_value.known_terminates = true; _ },
       { Compiler.Static_value.known_int = Some l_value; _ },
       { Compiler.Static_value.known_int = Some r_value; _ } ->
       if l_value = r_value then

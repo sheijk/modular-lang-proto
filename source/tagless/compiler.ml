@@ -47,13 +47,22 @@ struct
   type t = {
     known_int : int option;
     known_bool : bool option;
+    known_terminates : bool;
   }
 
-  let to_string = function
-    | { known_int = None; known_bool = None } -> "dynamic"
-    | { known_int = Some i; known_bool = None } -> string_of_int i
-    | { known_int = None; known_bool = Some b } -> string_of_bool b
-    | { known_int = Some _; known_bool = Some _ } -> "invalid, internal error"
+  let to_string info =
+    let terminates_str =
+      if info.known_terminates then ", always terminates" else ", might diverge"
+    in
+    match info with
+    | { known_int = None; known_bool = None; _ } ->
+      "dynamic" ^ terminates_str
+    | { known_int = Some i; known_bool = None; _ } ->
+      Printf.sprintf "known int %d%s" i terminates_str
+    | { known_int = None; known_bool = Some b; _ } ->
+      Printf.sprintf "known bool = %b%s" b terminates_str
+    | { known_int = Some _; known_bool = Some _; _ } ->
+      "invalid, internal error"
 
   let is_known = function
     | { known_bool = Some _; _ }
@@ -62,8 +71,47 @@ struct
     | _ ->
       false
 
-  let unknown = { known_int = None; known_bool = None; }
+  let unknown =
+    {
+      known_int = None;
+      known_bool = None;
+      known_terminates = false;
+    }
 
-  let bool b = { unknown with known_bool = Some b; }
-  let int i = { unknown with known_int = Some i; }
+  let with_bool info b =
+    {
+      info with
+      known_int = None;
+      known_bool = Some b;
+    }
+
+  let with_int info i =
+    {
+      info with
+      known_int = Some i;
+      known_bool = None;
+    }
+
+  let bool = with_bool unknown
+  let int = with_int unknown
+
+  let terminates info =
+    { info with known_terminates = true; }
+
+  let merge a b =
+    let merge_option a b =
+      match a, b with
+      | Some a_value, Some b_value ->
+        if (a_value = b_value) then
+          Some a_value
+        else
+          None
+      | _, _ ->
+        None
+    in
+    {
+      known_int = merge_option a.known_int b.known_int;
+      known_bool = merge_option a.known_bool b.known_bool;
+      known_terminates = a.known_terminates && b.known_terminates;
+    }
 end

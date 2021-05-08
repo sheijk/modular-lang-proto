@@ -12,7 +12,7 @@ module To_string =
 struct
   include Empty.To_string
 
-  let int = string_of_int
+  let int i = Printf.sprintf "(int %d)" i
   let ( +. ) lhs rhs = Printf.sprintf "(%s +. %s)" lhs rhs
   let ( -. ) lhs rhs = Printf.sprintf "(%s -. %s)" lhs rhs
   let ( *. ) lhs rhs = Printf.sprintf "(%s *. %s)" lhs rhs

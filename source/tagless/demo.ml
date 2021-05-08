@@ -17,8 +17,10 @@ struct
     if ((!errors) > 0) then begin
       Printf.printf "%d tests run, %d tests failed" (!total) (!errors);
       exit 1
-    end else
-      Printf.printf "%d tests run\n" (!total)
+    end else begin
+      Printf.printf "%d tests run\n" (!total);
+      exit 0
+    end
 end
 
 module Tester_f(I : Interpreter.Create) : sig
@@ -361,7 +363,7 @@ struct
       Some 11, if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20);
       Some 1, if_ (bool true) (int 1) (int 999);
 
-      Some 5, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
+      None, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
       None, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
 
       None, let_ "foo" (int 99) (get "foo");
@@ -386,14 +388,13 @@ let test_calc_optimized() =
   let module S = Tests_algo_optimize(Algo_bindings.To_string) in
   let module O = Tests_algo_optimize(Algo_bindings.Optimize(Algo_bindings.To_string)) in
   let print (_, unoptimized) (expect, (info, optimized)) =
+    let result_str = optimized ^ ", " ^ Compiler.Static_value.to_string info in
     match expect, Compiler.Static_value.is_known info with
     | Some _, true
     | None, false ->
-      Tester_stats.ok unoptimized optimized
-      (* Printf.printf "  opt %s to %s\n" unoptimized optimized *)
+      Tester_stats.ok unoptimized result_str
     | None, true ->
-      Tester_stats.fail unoptimized "not to infer value" optimized
-      (* Printf.printf "  err-opt %s to %s, inferred value but shouldn't\n" unoptimized optimized *)
+      Tester_stats.fail unoptimized "not to infer value" result_str
     | Some _, false ->
       Tester_stats.fail unoptimized "to infer value" optimized
       (* Printf.printf "  err-opt %s to %s, failed to infer value\n" unoptimized optimized *)
