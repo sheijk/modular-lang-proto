@@ -44,74 +44,72 @@ end
 
 module Static_value =
 struct
+  type value_structure =
+    | Known_int of int
+    | Known_bool of bool
+    | Dynamic
+
+  let merge_value a b =
+    if a = b then a
+    else Dynamic
+
+  type termination = Terminates_maybe | Terminates_always | Terminates_never
+
+  let merge_termination a b =
+    if a = b then a
+    else Terminates_maybe
+
   type t = {
-    known_int : int option;
-    known_bool : bool option;
-    known_terminates : bool;
+    value : value_structure;
+    termination : termination;
   }
 
   let to_string info =
     let terminates_str =
-      if info.known_terminates then ", always terminates" else ", might diverge"
+      match info.termination with
+       | Terminates_maybe -> ", might diverge"
+       | Terminates_always -> ", always terminates"
+       | Terminates_never -> ", never terminates"
     in
-    match info with
-    | { known_int = None; known_bool = None; _ } ->
+    match info.value with
+    | Dynamic ->
       "dynamic" ^ terminates_str
-    | { known_int = Some i; known_bool = None; _ } ->
+    | Known_int i ->
       Printf.sprintf "known int %d%s" i terminates_str
-    | { known_int = None; known_bool = Some b; _ } ->
+    | Known_bool b ->
       Printf.sprintf "known bool = %b%s" b terminates_str
-    | { known_int = Some _; known_bool = Some _; _ } ->
-      "invalid, internal error"
 
   let is_known = function
-    | { known_bool = Some _; _ }
-    | { known_int = Some _; _ } ->
-      true
-    | _ ->
-      false
+    | { value = (Known_int _ | Known_bool _); _ } -> true
+    | { value = Dynamic; _ } -> false
 
   let unknown =
     {
-      known_int = None;
-      known_bool = None;
-      known_terminates = false;
+      value = Dynamic;
+      termination = Terminates_maybe;
     }
 
   let with_bool info b =
     {
       info with
-      known_int = None;
-      known_bool = Some b;
+      value = Known_bool b;
     }
 
   let with_int info i =
     {
       info with
-      known_int = Some i;
-      known_bool = None;
+      value = Known_int i;
     }
 
   let bool = with_bool unknown
   let int = with_int unknown
 
   let terminates info =
-    { info with known_terminates = true; }
+    { info with termination = Terminates_always; }
 
   let merge a b =
-    let merge_option a b =
-      match a, b with
-      | Some a_value, Some b_value ->
-        if (a_value = b_value) then
-          Some a_value
-        else
-          None
-      | _, _ ->
-        None
-    in
     {
-      known_int = merge_option a.known_int b.known_int;
-      known_bool = merge_option a.known_bool b.known_bool;
-      known_terminates = a.known_terminates && b.known_terminates;
+      value = merge_value a.value b.value;
+      termination = merge_termination a.termination b.termination;
     }
 end

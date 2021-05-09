@@ -81,7 +81,7 @@ struct
   let combine_int (l_value : 'a -> 'a L.t) s_value pred l_op (lhs_info, lhs) (rhs_info, rhs) =
     let module S = Static_value in
     match lhs_info, rhs_info with
-    | { S.known_int = Some a_val; _ }, { S.known_int = Some b_val; _ } ->
+    | { S.value = S.Known_int a_val; _ }, { S.value = S.Known_int b_val; _ } ->
       let result = pred a_val b_val in
       let info = Static_value.merge lhs_info rhs_info in
       let static_value = s_value info result in
@@ -98,7 +98,7 @@ struct
   let combine_bool_pred pred l_op (lhs_info, lhs) (rhs_info, rhs) =
     let module S = Static_value in
     match lhs_info, rhs_info with
-    | { S.known_bool = Some a_val; _ }, { S.known_bool = Some b_val; _ } ->
+    | { S.value = S.Known_bool a_val; _ }, { S.value = S.Known_bool b_val; _ } ->
       let result = pred a_val b_val in
       Static_value.bool result, L.bool result
     | _, _ ->

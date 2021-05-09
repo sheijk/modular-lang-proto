@@ -137,15 +137,16 @@ struct
   let break (_, expr) = Compiler.Static_value.unknown, L.break expr
 
   let if_ (condition_info, condition) (lhs_info, lhs) (rhs_info, rhs) =
+    let module S = Compiler.Static_value in
     match condition_info, lhs_info, rhs_info with
-    | { Compiler.Static_value.known_bool = Some b; _ }, _, _ ->
+    | { S.value = S.Known_bool b; _ }, _, _ ->
       if b then
         lhs_info, lhs
       else
         rhs_info, rhs
-    | { Compiler.Static_value.known_terminates = true; _ },
-      { Compiler.Static_value.known_int = Some l_value; _ },
-      { Compiler.Static_value.known_int = Some r_value; _ } ->
+    | { S.termination = S.Terminates_always; _ },
+      { S.value = Known_int l_value; _ },
+      { S.value = Known_int r_value; _ } ->
       if l_value = r_value then
         lhs_info, lhs
       else
