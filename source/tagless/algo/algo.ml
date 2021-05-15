@@ -31,7 +31,7 @@ struct
   exception Loop_break of int
 
   let if_ condition true_ false_ = fun (ctx : I.t) ->
-    if (condition ctx) then
+    if (I.match_bool ((=) true) (condition ctx)) then
       true_ ctx
     else
       false_ ctx
@@ -46,15 +46,17 @@ struct
     try
       loop 0
     with Loop_break i ->
-      i
+      I.int i
 
   let break value = fun ctx ->
-    raise (Loop_break (value ctx))
+    I.match_int
+      (fun i -> raise (Loop_break i))
+      (value ctx)
 
   let loop_index () = fun (ctx : I.t) ->
     match I.loop_index ctx with
     | Some index ->
-      index
+      I.int index
     | None ->
       failwith "index used outside of loop"
 end

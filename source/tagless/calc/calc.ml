@@ -20,15 +20,19 @@ struct
 end
 let () = let module T : Lang = To_string in ()
 
-module Eval(I : Interpreter.Empty) =
+module Eval(I : Interpreter.Values) =
 struct
   include Empty.Eval(I)
   include Calc_bool.Eval(I)
   include Calc_int.Eval(I)
 
-  let ( =. ) lhs rhs = fun ctx -> (lhs ctx) = (rhs ctx)
-  let ( <. ) lhs rhs = fun ctx -> (lhs ctx) < (rhs ctx)
-  let ( >. ) lhs rhs = fun ctx -> (lhs ctx) > (rhs ctx)
+  let apply f lhs rhs = fun ctx ->
+    let module U = Interpreter.Value_utils(I) in
+    I.bool @@ U.match_int_int f (lhs ctx) (rhs ctx)
+
+  let ( =. ) lhs rhs = apply ( = ) lhs rhs
+  let ( <. ) lhs rhs = apply ( < ) lhs rhs
+  let ( >. ) lhs rhs = apply ( > ) lhs rhs
 end
 let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 

@@ -12,7 +12,7 @@ let () = let module T : Lang = To_string in ()
 
 module Eval(I : Interpreter.Empty) =
 struct
-  type 'a t = I.t -> 'a
+  type 'a t = I.t -> I.value
 end
 let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 
