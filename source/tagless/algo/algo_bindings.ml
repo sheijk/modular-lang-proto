@@ -49,4 +49,4 @@ struct
   include Algo.Optimize(L)
   include Bindings.Optimize(L)
 end
-let () = let module T : Lang = Optimize(Count_ast_size) in ()
+let () = let module T : Lang = Optimize(To_string) in ()

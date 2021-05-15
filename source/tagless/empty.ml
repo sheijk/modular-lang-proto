@@ -32,4 +32,4 @@ module Optimize(L : Lang) =
 struct
   type 'a t = Compiler.Static_value.t * 'a L.t
 end
-let () = let module T : Lang = Optimize(Count_ast_size) in ()
+let () = let module T : Lang = Optimize(To_string) in ()

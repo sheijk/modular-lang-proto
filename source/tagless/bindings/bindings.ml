@@ -9,6 +9,7 @@ end
 
 module To_string =
 struct
+  include Empty.To_string
   let let_ name value expr =
     Printf.sprintf "let %s = %s in %s" name value expr
 
@@ -83,4 +84,4 @@ struct
   let get name = Compiler.Static_value.unknown, L.get name
   let let_ name (_, value) (expr_info, expr) = expr_info, L.let_ name value expr
 end
-let () = let module T : Lang = Optimize(Count_ast_size) in ()
+let () = let module T : Lang = Optimize(To_string) in ()
