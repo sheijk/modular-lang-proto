@@ -2,18 +2,30 @@
 module type Empty =
 sig
   type t
+  type value
+end
+
+module type Values =
+sig
+  type value
+
+  val int : int -> value
+  val bool : bool -> value
+  val unit : value
 end
 
 module type Create =
 sig
-  type t
+  include Empty
 
   val make : unit -> t
+
+  include Values
 end
 
 module type Variables =
 sig
-  type t
+  include Empty
 
   val with_variable : t -> string -> t
   val get : t -> string -> int
@@ -22,24 +34,38 @@ end
 
 module type Loop =
 sig
-  type t
+  include Empty
 
   val with_index : t -> int -> t
   val loop_index : t -> int option
+
+  include Values
 end
 
 module type All =
 sig
-  type t
+  include Empty
   include Create with type t := t
   include Loop with type t := t
   include Variables with type t := t
+  include Values
+end
+
+module Default_values =
+struct
+  type value = Int of int | Bool of bool | Unit
+
+  let int i = Int i
+  let bool b = Bool b
+  let unit = Unit
 end
 
 module No_runtime : Create =
 struct
   type t = unit
   let make () = ()
+
+  include Default_values
 end
 
 exception Unknow_variable of string
@@ -84,4 +110,6 @@ struct
       let r = find_variable ctx name in
       r := value
   end
+
+  include Default_values
 end
