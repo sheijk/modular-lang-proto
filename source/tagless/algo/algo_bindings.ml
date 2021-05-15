@@ -51,6 +51,13 @@ struct
 end
 let () = let module T : Lang = Optimize(Count_ast_size) in ()
 
+module type String_lang =
+sig
+  type t
+  val leaf : string -> t
+  val tree : t list -> t
+end
+
 module String_tree =
 struct
   type t =
@@ -75,6 +82,7 @@ struct
       t [s "int"; s "7"]
   end
 end
+let () = let module M : String_lang = String_tree in ()
 
 module Attempt1 =
 struct
@@ -119,6 +127,18 @@ struct
 
     let parse = parse_any readers
   end
+
+  (* module Parse(L : Calc_bool.Lang) : String_lang =
+   * struct
+   *   type 'a t = String of string | L of 'a L.t
+   * 
+   *   let leaf str = String str
+   *   let tree = function
+   *     | [String "bool"; String "true"] -> L (L.bool true)
+   *     | [String "bool"; String "false"] -> L (L.bool false)
+   *     | [String "&&"; L lhs; L rhs] -> L L.(lhs && rhs)
+   *     | _ -> (failwith "syntax error" : unit -> int t)
+   * end *)
 
   module Test(L : Calc_bool.Lang) =
   struct
