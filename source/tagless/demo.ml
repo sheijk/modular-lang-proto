@@ -56,7 +56,7 @@ module Tester_legacy = Tester_f(Interpreter.No_runtime)
 
 module type Test_names =
 sig
-  type 'a t = string
+  type t = string
   type value
 
   val int_tests : (value option * string) list
@@ -67,9 +67,9 @@ module type Test_cases =
 sig
   module I : Interpreter.Create
 
-  type 'a t = I.t -> I.value
-  val int_tests : (I.value option * int t) list
-  val bool_tests : (I.value option * bool t) list
+  type t = I.t -> I.value
+  val int_tests : (I.value option * t) list
+  val bool_tests : (I.value option * t) list
 end
 
 module Test_runner(C : Test_names)(E : Test_cases with type I.value = C.value) =
@@ -87,7 +87,7 @@ end
 
 module Tests_int(L : Calc_int.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   type value = Interpreter.Default_values.value
   module I = Interpreter.No_runtime
 
@@ -113,7 +113,7 @@ let test_int() =
 
 module Tests_bool(L : Calc_bool.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   module I = Interpreter.No_runtime
   type value = Interpreter.Default_values.value
 
@@ -144,7 +144,7 @@ let test_bool () =
 
 module Tests_combined(L : Calc.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   module I = Interpreter.No_runtime
   type value = Interpreter.Default_values.value
 
@@ -196,7 +196,7 @@ let test_combined() =
 
 module Tests_algo(L : Algo_calc.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   module I = Interpreter.Dynamic
   type value = Interpreter.Default_values.value
 
@@ -239,7 +239,7 @@ let test_algo() =
 
 module Tests_algo_bool(L : Algo_bool.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   type value = Interpreter.Default_values.value
   module I = Interpreter.Dynamic
 
@@ -266,7 +266,7 @@ let test_algo_bool() =
 
 module Tests_algo_bindings(L : Algo_bindings.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
   type value = Interpreter.Default_values.value
   module I = Interpreter.Dynamic
 
@@ -307,7 +307,7 @@ let test_algo_bindings () =
 
 module Tests_algo_compiler_errors(L : Algo_bindings.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
 
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
@@ -347,7 +347,7 @@ let test_algo_compiled () =
 
 module Tests_algo_optimize(L : Algo_bindings.Lang) =
 struct
-  type 'a t = 'a L.t
+  type t = L.t
 
   let bool_tests = L.[
       Some true, bool true;

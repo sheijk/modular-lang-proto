@@ -1,11 +1,11 @@
 module type Lang =
 sig
-  type 'a t
-  val int : int -> int t
-  val ( +. ) : int t -> int t -> int t
-  val ( -. ) : int t -> int t -> int t
-  val ( *. ) : int t -> int t -> int t
-  val ( /. ) : int t -> int t -> int t
+  type t
+  val int : int -> t
+  val ( +. ) : t -> t -> t
+  val ( -. ) : t -> t -> t
+  val ( *. ) : t -> t -> t
+  val ( /. ) : t -> t -> t
 end
 
 module To_string =

@@ -1,10 +1,10 @@
 module type Lang =
 sig
-  type 'a t
+  type t
 
-  val let_ : string -> int t -> 'a t -> 'a t
-  val get : string -> int t
-  val set : string -> int t -> 'a t -> 'a t
+  val let_ : string -> t -> t -> t
+  val get : string -> t
+  val set : string -> t -> t -> t
 end
 
 module To_string =

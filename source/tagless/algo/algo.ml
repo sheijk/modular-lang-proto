@@ -1,11 +1,11 @@
 module type Lang =
 sig
-  type 'a t
+  type t
 
-  val if_ : bool t -> int t -> int t -> int t
-  val loop : int t -> int t
-  val break : int t -> int t
-  val loop_index : unit -> int t
+  val if_ : t -> t -> t -> t
+  val loop : t -> t
+  val break : t -> t
+  val loop_index : unit -> t
 end
 
 module To_string =

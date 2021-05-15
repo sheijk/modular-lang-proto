@@ -37,7 +37,7 @@ struct
 
   module Parse_bool(L : Calc_bool.Lang) =
   struct
-    type 'a t = 'a L.t
+    type t = L.t
 
     let rec parse_any readers = function
       | St.Leaf f :: args ->

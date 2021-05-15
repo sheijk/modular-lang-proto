@@ -1,9 +1,9 @@
 module type Lang =
 sig
-  type 'a t
-  val bool : bool -> bool t
-  val ( && ) : bool t -> bool t -> bool t
-  val ( || ) : bool t -> bool t -> bool t
+  type t
+  val bool : bool -> t
+  val ( && ) : t -> t -> t
+  val ( || ) : t -> t -> t
 end
 
 module To_string =

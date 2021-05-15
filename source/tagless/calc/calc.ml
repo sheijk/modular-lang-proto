@@ -1,12 +1,12 @@
 module type Lang =
 sig
-  type 'a t
-  include Calc_int.Lang with type 'a t := 'a t
-  include Calc_bool.Lang with type 'a t := 'a t
+  type t
+  include Calc_int.Lang with type t := t
+  include Calc_bool.Lang with type t := t
 
-  val ( =. ) : int t -> int t -> bool t
-  val ( <. ) : int t -> int t -> bool t
-  val ( >. ) : int t -> int t -> bool t
+  val ( =. ) : t -> t -> t
+  val ( <. ) : t -> t -> t
+  val ( >. ) : t -> t -> t
 end
 
 module To_string =
@@ -76,7 +76,7 @@ end
 module Optimize(L : Lang) =
 struct
   module Static_value = Compiler.Static_value
-  type 'a t = Static_value.t * 'a L.t
+  type t = Static_value.t * L.t
 
   let with_l f_info f_l = fun (lhs_info, lhs) (rhs_info, rhs) ->
     f_info lhs_info rhs_info, f_l lhs rhs
@@ -84,7 +84,7 @@ struct
   let bool b = Static_value.bool b, L.bool b
   let int i = Static_value.int i, L.int i
 
-  let combine_int (l_value : 'a -> 'a L.t) s_value pred l_op (lhs_info, lhs) (rhs_info, rhs) =
+  let combine_int (l_value : 'a -> L.t) s_value pred l_op (lhs_info, lhs) (rhs_info, rhs) =
     let module S = Static_value in
     match lhs_info, rhs_info with
     | { S.value = S.Known_int a_val; _ }, { S.value = S.Known_int b_val; _ } ->

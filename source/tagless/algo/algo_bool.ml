@@ -1,7 +1,7 @@
 module type Lang = sig
-  type 'a t
-  include Algo.Lang with type 'a t := 'a t
-  include Calc_bool.Lang with type 'a t := 'a t
+  type t
+  include Algo.Lang with type t := t
+  include Calc_bool.Lang with type t := t
 end
 
 module To_string = struct
