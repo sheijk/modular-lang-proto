@@ -411,5 +411,6 @@ let () =
   test_algo_bindings ();
   test_algo_compiled ();
   test_calc_optimized ();
+  Experimental.test ();
   Tester.finish ()
 
