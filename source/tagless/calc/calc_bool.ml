@@ -41,13 +41,15 @@ let apply (f : bool -> bool -> bool) (lhs_info, lhs) (rhs_info, rhs) =
     and rhs = rhs ctx
     in
     fun rt ->
-      (f (lhs rt) (rhs rt))
+      let module I = Interpreter.No_runtime in
+      let module U = Interpreter.Value_utils(I) in
+      I.bool @@ U.match_bool_bool f (lhs rt) (rhs rt)
 
 module Eval_compiled =
 struct
   include Empty.Eval_compiled
 
-  let bool (b : bool) = Compiler.Info.make(), fun _ _ -> b
+  let bool (b : bool) = Compiler.Info.make(), fun _ _ -> I.bool b
 
   let ( && ) lhs rhs = apply ( && ) lhs rhs
   let ( || ) lhs rhs = apply ( || ) lhs rhs

@@ -42,8 +42,10 @@ let apply f (lhs_info, lhs) (rhs_info, rhs) =
     let lhs = lhs ctx
     and rhs = rhs ctx
     in
-    fun ctx ->
-      (f (lhs ctx) (rhs ctx))
+    fun rt ->
+      let module I = Interpreter.No_runtime in
+      let module U = Interpreter.Value_utils(I) in
+      I.bool @@ U.match_int_int f (lhs rt) (rhs rt)
 
 module Eval_compiled =
 struct

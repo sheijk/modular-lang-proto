@@ -330,21 +330,19 @@ let test_algo_compiled () =
   print_endline "Testing Algo_calc compiled";
   let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
   let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
-  let check_and_run info make_value f ctx =
+  let check_and_run info f ctx =
     let f = f @@ Compiler.Context.make () in
     if false = Compiler.Info.validate info then
       failwith "compiler error"
     else
-      make_value @@ f ctx
+      f ctx
   in
-  let make_bool = Interpreter.Default_values.bool in
-  let make_int = Interpreter.Default_values.int in
   let value_string = Interpreter.Default_values.value_string in
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester_legacy.run string expected (check_and_run info make_bool f) value_string)
+      Tester_legacy.run string expected (check_and_run info f) value_string)
     P.bool_tests C.bool_tests;
   List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester_legacy.run string expected (check_and_run info make_int f) value_string)
+      Tester_legacy.run string expected (check_and_run info f) value_string)
     P.int_tests C.int_tests
 
 module Tests_algo_optimize(L : Algo_bindings.Lang) =

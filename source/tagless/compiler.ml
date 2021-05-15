@@ -23,8 +23,10 @@ end
 
 module Context =
 struct
+  module I = Interpreter.No_runtime
+
   type t = {
-    variables : (string * int ref) list;
+    variables : (string * I.value ref) list;
     loop_index : int ref option;
   }
 

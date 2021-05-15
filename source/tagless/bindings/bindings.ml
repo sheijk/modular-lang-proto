@@ -39,10 +39,11 @@ let () = let module T : Lang = Eval(Interpreter.Dynamic) in ()
 module Eval_compiled =
 struct
   include Empty.Eval_compiled
+  module I = Interpreter.No_runtime
 
   let let_ name (_v_info, value) ((e_info : Compiler.Info.t), expr) =
     e_info, fun ctx ->
-      let store = ref 0 in
+      let store = ref (I.int 0) in
       let value = value ctx in
       let expr = expr (Compiler.Context.new_variable ctx name store) in
       fun rt ->

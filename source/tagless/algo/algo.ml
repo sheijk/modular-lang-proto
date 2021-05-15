@@ -65,6 +65,7 @@ let () = let module T : Lang = Eval(Interpreter.Dynamic) in ()
 module Eval_compiled =
 struct
   include Empty.Eval_compiled
+  module I = Interpreter.No_runtime
 
   exception Loop_break of int
 
@@ -80,7 +81,7 @@ struct
       and false_ = false_ ctx
       in
       fun ctx ->
-        if (condition ctx) then
+        if (I.match_bool ((=) true) (condition ctx)) then
           true_ ctx
         else
           false_ ctx
@@ -101,19 +102,21 @@ struct
         try
           loop 0
         with Loop_break i ->
-          i
+          I.int i
 
   let break (v_info, value) =
     v_info, fun ctx ->
       let value = value ctx in
       fun ctx ->
-        raise (Loop_break (value ctx))
+        I.match_int
+          (fun i -> raise (Loop_break i))
+          (value ctx)
 
   let loop_index () =
     Compiler.Info.mark_loop_index @@ Compiler.Info.make(),
     function
     | { Compiler.Context.loop_index = Some index; _ } ->
-      fun _ -> !index
+      fun _ -> I.int (!index)
     | { Compiler.Context.loop_index = None; _ } ->
       failwith "index used outside of loop"
 end

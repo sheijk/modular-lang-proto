@@ -18,7 +18,8 @@ let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 
 module Eval_compiled =
 struct
-  type 'a t = Compiler.Info.t * (Compiler.Context.t -> Interpreter.No_runtime.t -> 'a)
+  module I = Interpreter.No_runtime
+  type 'a t = Compiler.Info.t * (Compiler.Context.t -> I.t -> I.value)
 end
 let () = let module T : Lang = Eval_compiled in ()
 
