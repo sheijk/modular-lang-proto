@@ -57,6 +57,15 @@ struct
     | Leaf of string
     | Tree of t list
 
+  let leaf str = Leaf str
+  let tree children = Tree children
+
+  let rec to_string = function
+    | Leaf s -> s
+    | Tree children ->
+      let children_str = List.map to_string children in
+      "[" ^ String.concat ", " children_str ^ "]"
+
   module Build =
   struct
     let s str = Leaf str
@@ -69,43 +78,72 @@ end
 
 module Attempt1 =
 struct
-  module type Parsable =
-  sig
-    type 'a t
-    val readers : (string * (String_tree.t list -> bool t option)) list
-  end
+  module St = String_tree
 
-  module Parse(P : Parsable) =
-  struct
-    let parse tree =
-      let translate hd args =
-        try
-          let _, parse = List.find (fun (handled, _) -> handled = hd) P.readers in
-          parse args
-        with Failure _ ->
-          failwith "unknown language form"
-      in
-      match tree with
-      | String_tree.Tree (String_tree.Leaf hd :: args) ->
-        translate hd args
-      | _ -> failwith "expected a tree"
-  end
-
-  module Parse_bool(L : Calc_bool.Lang) : Parsable =
+  module Parse_bool(L : Calc_bool.Lang) =
   struct
     type 'a t = 'a L.t
 
-    let bool = function
-      | [String_tree.Leaf "true"] -> Some (L.bool true)
-      | [String_tree.Leaf "false"] -> Some (L.bool true)
+    let rec parse_any readers = function
+      | St.Leaf f :: args ->
+        let _, read = List.find (fun (name, _) -> name = f) readers in
+        read (parse_any readers) args
+      | [St.Tree args] ->
+        parse_any readers args
+      | _ ->
+        failwith "parse"
+
+    let map2 f a b =
+      match a, b with
+      | Some a, Some b -> f a b
       | _ -> None
+
+    let bool _ = function
+      | [St.Leaf "true"] -> Some (L.bool true)
+      | [St.Leaf "false"] -> Some (L.bool false)
+      | _ -> None
+
+    let and_ parse_arg = function
+      | [lhs; rhs] ->
+        map2
+          (fun lhs rhs -> Some L.(lhs && rhs))
+          (parse_arg [lhs])
+          (parse_arg [rhs])
+      | _ ->
+        None
 
     let readers = [
       "bool", bool;
-      (* "&&", and_; *)
-      (* "||", or_; *)
+      "&&", and_;
     ]
+
+    let parse = parse_any readers
   end
+
+  module Test(L : Calc_bool.Lang) =
+  struct
+    let a = L.(bool true && bool false)
+  end
+
+  let test_cases = St.[
+    [leaf "bool"; leaf "true"];
+    [leaf "bool"; leaf "false"];
+    [leaf "&&";
+     tree [leaf "bool"; leaf "true"];
+     tree [leaf "bool"; leaf "false"]]
+  ]
+
+  let () =
+    let module P = Parse_bool(Calc_bool.To_string) in
+    let test st =
+      let to_string st = String_tree.to_string (Tree st) in
+      match P.parse st with
+      | Some str ->
+        Printf.printf "  %s -> %s\n" (to_string st) str
+      | None ->
+        Printf.printf "  %s -> syntax error\n" (to_string st)
+    in
+    List.iter test test_cases
 end
 
 module Module =
@@ -166,8 +204,4 @@ struct
       ];
     ]
   end
-end
-
-module Attempt2 =
-struct
 end
