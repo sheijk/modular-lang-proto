@@ -48,10 +48,10 @@ let () = let module T : Lang = Eval_compiled in ()
 
 module Count_ast_size =
 struct
-  type 'a t = int
+  type t = int
 
   let bool _ = 1
   let ( && ) lhs rhs = lhs + rhs + 1
   let ( || ) lhs rhs = lhs + rhs + 1
 end
-let () = let module T : Lang = Count_ast_size in ()
+(* let () = let module T : Lang = Count_ast_size in () *)

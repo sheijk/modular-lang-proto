@@ -58,7 +58,7 @@ let add_plus_one lhs rhs = lhs + rhs + 1
 
 module Count_ast_size =
 struct
-  type 'a t = int
+  type t = int
 
   let int _ = 1
 
@@ -67,4 +67,4 @@ struct
   let ( *. ) = add_plus_one
   let ( /. ) = add_plus_one
 end
-let () = let module T : Lang = Count_ast_size in ()
+(* let () = let module T : Lang = Count_ast_size in () *)

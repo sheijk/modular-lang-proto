@@ -65,7 +65,7 @@ struct
   let ( <. ) = add_plus_one
   let ( >. ) = add_plus_one
 end
-let () = let module T : Lang = Count_ast_size in ()
+(* let () = let module T : Lang = Count_ast_size in () *)
 
 module Optimize(L : Lang) =
 struct

@@ -68,13 +68,13 @@ let () = let module T : Lang = Eval_compiled in ()
 
 module Count_ast_size =
 struct
-  type 'a t = int
+  type t = int
 
   let let_ _name value expr = value + expr + 1
   let get _name = 1
   let set _name value expr = value + expr + 1
 end
-let () = let module T : Lang = Count_ast_size in ()
+(* let () = let module T : Lang = Count_ast_size in () *)
 
 module Optimize(L : Lang) =
 struct

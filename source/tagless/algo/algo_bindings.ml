@@ -40,7 +40,7 @@ struct
   include Algo.Count_ast_size
   include Bindings.Count_ast_size
 end
-let () = let module T : Lang = Count_ast_size in ()
+(* let () = let module T : Lang = Count_ast_size in () *)
 
 module Optimize(L : Lang) =
 struct
