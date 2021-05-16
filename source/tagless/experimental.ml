@@ -289,6 +289,29 @@ struct
 
     let readers parse =
       let binop f = function
+        | String_tree.Tree [_; lhs_st; rhs_st] ->
+          let lhs = parse lhs_st in
+          let rhs = parse rhs_st in
+          f lhs rhs
+        | _ -> raise Parse_error
+      in
+      String_tree.[
+        "bool", (function
+            | Tree [_; Leaf "true"] -> L.bool true
+            | Tree [_; Leaf "false"] -> L.bool false
+            | _ -> raise Parse_error);
+        "&&", binop L.( && );
+        "||", binop L.( || );
+      ]
+  end
+
+  module Calc_int_parse_rules(L : Calc_int.Lang) : (Parse_rules with type t = L.t) =
+  struct
+    type t = L.t
+    type reader = String_tree.t -> t
+
+    let readers parse =
+      let binop f = function
           | String_tree.Tree [_; lhs_st; rhs_st] ->
             let lhs = parse lhs_st in
             let rhs = parse rhs_st in
@@ -296,12 +319,13 @@ struct
           | _ -> raise Parse_error
       in
       String_tree.[
-      "bool", (function
-              | Tree [_; Leaf "true"] -> L.bool true
-              | Tree [_; Leaf "false"] -> L.bool false
+      "int", (function
+              | Tree [_; Leaf value] -> L.int (int_of_string value)
               | _ -> raise Parse_error);
-      "&&", binop L.( && );
-      "||", binop L.( || );
+      "+.", binop L.( +. );
+      "-.", binop L.( -. );
+      "*.", binop L.( *. );
+      "/.", binop L.( /. );
     ]
   end
 
@@ -322,7 +346,21 @@ struct
       reader st
   end
 
-  let test () =
+  module Int_cases(St : String_lang) =
+  struct
+    let test_cases = St.[
+        tree [leaf "int"; leaf "0"];
+        tree [leaf "int"; leaf "99"];
+        tree [leaf "+.";
+              tree [leaf "int"; leaf "2"];
+              tree [leaf "int"; leaf "3"]];
+        tree [leaf "*.";
+              tree [leaf "+."; tree [leaf "int"; leaf "5"]; tree [leaf "int"; leaf "4"]];
+              tree [leaf "int"; leaf "10"]]
+      ]
+  end
+
+  let test_bool () =
     print_endline "Testing Experimental.Attempt3 parsing";
     let module P = Parse(Calc_bool_parse_rules(Calc_bool.To_string)) in
     let check st =
@@ -331,6 +369,20 @@ struct
     in
     let module C = Attempt2.Test_cases(String_tree) in
     List.iter check C.test_cases
+
+  let test_int () =
+    print_endline "Testing Experimental.Attempt3 parsing";
+    let module P = Parse(Calc_int_parse_rules(Calc_int.To_string)) in
+    let check st =
+      let ast = P.parse st in
+      Printf.printf "  %s => %s\n" (String_tree.to_string st) ast
+    in
+    let module C = Int_cases(String_tree) in
+    List.iter check C.test_cases
+
+  let test () =
+    test_bool ();
+    test_int ()
 end
 
 let test () =
