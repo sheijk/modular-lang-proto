@@ -9,15 +9,16 @@ sig
   val ( >. ) : t -> t -> t
 end
 
-module To_string =
+module To_st(S : Strlang.Lang) =
 struct
-  include Calc_int.To_string
-  include Calc_bool.To_string
+  include Calc_int.To_st(S)
+  include Calc_bool.To_st(S)
 
-  let ( =. ) = Printf.sprintf "(%s =. %s)"
-  let ( <. ) = Printf.sprintf "(%s <. %s)"
-  let ( >. ) = Printf.sprintf "(%s >. %s)"
+  let ( =. ) lhs rhs = S.tree [S.leaf "=."; lhs; rhs]
+  let ( <. ) lhs rhs = S.tree [S.leaf "<."; lhs; rhs]
+  let ( >. ) lhs rhs = S.tree [S.leaf ">."; lhs; rhs]
 end
+module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
 
 module Eval(I : Interpreter.Values) =

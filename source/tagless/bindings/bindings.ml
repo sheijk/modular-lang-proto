@@ -7,15 +7,20 @@ sig
   val set : string -> t -> t -> t
 end
 
-module To_string =
+module To_st(S : Strlang.Lang) =
 struct
-  include Empty.To_string
-  let let_ name value expr =
-    Printf.sprintf "let %s = %s in %s" name value expr
+  include Empty.To_st(S)
 
-  let get name = name
-  let set name value expr = Printf.sprintf "%s = %s; %s" name value expr
+  let let_ name value expr =
+    S.tree [S.leaf "let"; S.leaf name; value; expr]
+
+  let get name =
+    S.leaf name
+
+  let set name value expr =
+    S.tree [S.leaf name; value; expr]
 end
+module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = struct include Empty.To_string include To_string end in ()
 
 module Eval(I : Interpreter.Variables) =

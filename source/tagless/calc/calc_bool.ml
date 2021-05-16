@@ -6,14 +6,22 @@ sig
   val ( || ) : t -> t -> t
 end
 
-module To_string =
+module To_st(S : Strlang.Lang) =
 struct
-  include Empty.To_string
+  include Empty.To_st(S)
 
-  let bool b = if b then "(bool true)" else "(bool false)"
-  let ( && ) lhs rhs = Printf.sprintf "(%s && %s)" lhs rhs
-  let ( || ) lhs rhs = Printf.sprintf "(%s || %s)" lhs rhs
+  let bool b =
+    S.tree [
+      S.leaf "bool";
+      S.leaf @@ string_of_bool b]
+
+  let ( && ) lhs rhs =
+    S.tree [ S.leaf "&&"; lhs; rhs ]
+
+  let ( || ) lhs rhs =
+    S.tree [ S.leaf "||"; lhs; rhs ]
 end
+module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
 
 module Eval(I : Interpreter.Values) =

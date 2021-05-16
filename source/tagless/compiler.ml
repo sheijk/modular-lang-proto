@@ -79,7 +79,7 @@ struct
     | Known_int i ->
       Printf.sprintf "known int %d%s" i terminates_str
     | Known_bool b ->
-      Printf.sprintf "known bool = %b%s" b terminates_str
+      Printf.sprintf "known bool %b%s" b terminates_str
 
   let is_known = function
     | { value = (Known_int _ | Known_bool _); _ } -> true

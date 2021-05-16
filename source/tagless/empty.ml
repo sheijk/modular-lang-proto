@@ -4,6 +4,12 @@ sig
   type t
 end
 
+module To_st(L : Strlang.Lang) =
+struct
+  type t = L.t
+end
+let () = let module T : Lang = To_st(Strlang.Tree) in ()
+
 module To_string =
 struct
   type t = string

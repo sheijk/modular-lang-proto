@@ -8,20 +8,21 @@ sig
   val loop_index : unit -> t
 end
 
-module To_string =
+module To_st(S : Strlang.Lang) =
 struct
-  include Empty.To_string
+  include Empty.To_st(S)
 
   let if_ condition true_ false_ =
-    Printf.sprintf "(if %s then %s else %s)" condition true_ false_
+    S.tree [S.leaf "if"; condition; true_; false_]
 
   let loop body =
-    Printf.sprintf "(loop %s)" body
+    S.tree [S.leaf "loop"; body]
   let break condition =
-    Printf.sprintf "(break %s)" condition
+    S.tree [S.leaf "break"; condition]
   let loop_index () =
-    Printf.sprintf "loop_index"
+    S.leaf "loop_index"
 end
+module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
 
 module Eval(I : Interpreter.Loop) =

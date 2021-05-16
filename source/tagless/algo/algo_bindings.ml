@@ -6,13 +6,14 @@ sig
   include Bindings.Lang with type t := t
 end
 
-module To_string =
+module To_st(S : Strlang.Lang) =
 struct
-  include Empty.To_string
-  include Calc.To_string
-  include Algo.To_string
-  include Bindings.To_string
+  include Empty.To_st(S)
+  include Calc.To_st(S)
+  include Algo.To_st(S)
+  include Bindings.To_st(S)
 end
+module To_string = To_st(Strlang.To_string)
 let () = let module T : Algo.Lang = To_string in ()
 
 module Eval(I : Interpreter.All) =
