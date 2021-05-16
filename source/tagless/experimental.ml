@@ -273,7 +273,9 @@ struct
   end
   let () = let module T : Module.Lang = Lang_rules in ()
 
-  exception Parse_error
+  exception Parse_error of string * (String_tree.t option)
+  let parse_error str = raise (Parse_error (str, None))
+  let parse_error_at str st = raise (Parse_error (str, Some st))
 
   module type Parse_rules =
   sig
@@ -293,13 +295,13 @@ struct
           let lhs = parse lhs_st in
           let rhs = parse rhs_st in
           f lhs rhs
-        | _ -> raise Parse_error
+        | st -> parse_error_at "invalid binop" st
       in
       String_tree.[
         "bool", (function
             | Tree [_; Leaf "true"] -> L.bool true
             | Tree [_; Leaf "false"] -> L.bool false
-            | _ -> raise Parse_error);
+            | st -> parse_error_at "invalid bool literal" st);
         "&&", binop L.( && );
         "||", binop L.( || );
       ]
@@ -316,17 +318,41 @@ struct
             let lhs = parse lhs_st in
             let rhs = parse rhs_st in
             f lhs rhs
-          | _ -> raise Parse_error
+          | st -> parse_error_at "invalid binop" st
       in
       String_tree.[
       "int", (function
               | Tree [_; Leaf value] -> L.int (int_of_string value)
-              | _ -> raise Parse_error);
+              | st -> parse_error_at "invalid int literal" st);
       "+.", binop L.( +. );
       "-.", binop L.( -. );
       "*.", binop L.( *. );
       "/.", binop L.( /. );
     ]
+  end
+
+  module Calc_parse_rules(L : Calc.Lang) : (Parse_rules with type t = L.t) =
+  struct
+    type t = L.t
+    type reader = String_tree.t -> t
+
+    let readers parse =
+      let binop f = function
+        | String_tree.Tree [_; lhs_st; rhs_st] ->
+          let lhs = parse lhs_st in
+          let rhs = parse rhs_st in
+          f lhs rhs
+        | st -> parse_error_at "invalid binop" st
+      in
+      let module B = Calc_bool_parse_rules(L) in
+      let module I = Calc_int_parse_rules(L) in
+      B.readers parse @
+      I.readers parse @
+      [
+        "=.", binop L.( =. );
+        "<.", binop L.( <. );
+        ">.", binop L.( >. );
+      ]
   end
 
   module Parse(P : Parse_rules) =
@@ -340,9 +366,14 @@ struct
         match st with
         | String_tree.Leaf str -> str
         | String_tree.Tree (String_tree.Leaf str :: _) -> str
-        | _ -> raise Parse_error
+        | st -> parse_error_at "list as first element" st
       in
-      let _, reader = List.find (fun (name, _) -> name = hd) readers in
+      let _, reader =
+        try
+          List.find (fun (name, _) -> name = hd) readers
+        with Not_found ->
+          parse_error_at ("identifier " ^ hd ^ " not found") st
+      in
       reader st
   end
 
@@ -360,8 +391,29 @@ struct
       ]
   end
 
+  module Calc_cases(St : String_lang) =
+  struct
+    let test_cases =
+      let module B = Attempt2.Test_cases(St) in
+      let module I = Int_cases(St) in
+      B.test_cases @
+      I.test_cases @
+      let int n =
+        St.tree [
+          St.leaf "int";
+          St.leaf @@ string_of_int n]
+      in
+      let binop name l r = St.tree [St.leaf name; l; r] in
+      [
+        binop "=." (int 20) (int 10);
+        binop "&&"
+          (binop ">." (int 2) (int 1))
+          (binop "<." (int 3) (int 4)) ;
+      ]
+  end
+
   let test_bool () =
-    print_endline "Testing Experimental.Attempt3 parsing";
+    print_endline "Testing Experimental.Attempt3 parsing Calc_bool";
     let module P = Parse(Calc_bool_parse_rules(Calc_bool.To_string)) in
     let check st =
       let ast = P.parse st in
@@ -371,7 +423,7 @@ struct
     List.iter check C.test_cases
 
   let test_int () =
-    print_endline "Testing Experimental.Attempt3 parsing";
+    print_endline "Testing Experimental.Attempt3 parsing Calc_int";
     let module P = Parse(Calc_int_parse_rules(Calc_int.To_string)) in
     let check st =
       let ast = P.parse st in
@@ -380,9 +432,28 @@ struct
     let module C = Int_cases(String_tree) in
     List.iter check C.test_cases
 
+  let test_calc () =
+    print_endline "Testing Experimental.Attempt3 parsing Calc";
+    let module P = Parse(Calc_parse_rules(Calc.To_string)) in
+    let check st =
+      let ast =
+        try
+          P.parse st
+        with Parse_error (msg, invalid_st) ->
+          "<error " ^ msg ^
+          (match invalid_st with
+           | Some st -> " @ " ^ String_tree.to_string st
+           | None -> "")
+      in
+      Printf.printf "  %s => %s\n" (String_tree.to_string st) ast
+    in
+    let module C = Calc_cases(String_tree) in
+    List.iter check C.test_cases
+
   let test () =
     test_bool ();
-    test_int ()
+    test_int ();
+    test_calc ()
 end
 
 let test () =
