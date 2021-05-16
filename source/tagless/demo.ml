@@ -410,11 +410,18 @@ struct
     ]
 end
 
-let test_calc_optimized() =
+let combine input testcases =
+  List.map2
+    (fun (_, name) (expected, testcase) -> name, expected, testcase)
+    input
+    testcases
+
+let test_algo_optimized() =
   print_endline "Testing Algo_bindings optimization";
   let module S = Tests_algo_optimize(Algo_bindings.To_string) in
-  let module O = Tests_algo_optimize(Algo_bindings.Optimize(Algo_bindings.To_string)) in
-  let print (_, unoptimized) (expect, (info, optimized)) =
+  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
+  let module O = Tests_algo_optimize(Opt) in
+  let print (unoptimized, expect, (info, optimized)) =
     let result_str = optimized ^ ", " ^ Compiler.Static_value.to_string info in
     match expect, Compiler.Static_value.is_known info with
     | Some _, true
@@ -426,18 +433,23 @@ let test_calc_optimized() =
       Tester_stats.fail unoptimized "to infer value" optimized
       (* Printf.printf "  err-opt %s to %s, failed to infer value\n" unoptimized optimized *)
   in
-  List.iter2 print S.bool_tests O.bool_tests;
-  List.iter2 print S.int_tests O.int_tests
+  List.iter print (combine S.bool_tests O.bool_tests);
+  List.iter print (combine S.int_tests O.int_tests)
 
 let () =
-  test_bool ();
-  test_int ();
-  test_combined ();
-  test_algo ();
-  test_algo_bool ();
-  test_algo_bindings ();
-  test_algo_compiled ();
-  test_calc_optimized ();
-  Experimental.test ();
-  Tester.finish ()
+  try
+    test_bool ();
+    test_int ();
+    test_combined ();
+    test_algo ();
+    test_algo_bool ();
+    test_algo_bindings ();
+    test_algo_compiled ();
+    test_algo_optimized ();
+    Experimental.test ();
+    Tester.finish ();
+  with _ as error ->
+    Tester_stats.fail "" "" "exception during test run";
+    Tester.finish ();
+    raise error
 
