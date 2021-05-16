@@ -11,7 +11,8 @@ struct
 
   let ok testcase result =
     incr total;
-    Printf.printf "  ok %s => %s\n" testcase result
+    if String.length testcase > 0 || String.length result > 0 then
+      Printf.printf "  ok %s => %s\n" testcase result
 
   let finish () =
     if ((!errors) > 0) then begin
