@@ -15,10 +15,10 @@ struct
     S.tree [S.leaf "let"; S.leaf name; value; expr]
 
   let get name =
-    S.leaf name
+    S.tree [S.leaf "get"; S.leaf name]
 
   let set name value expr =
-    S.tree [S.leaf name; value; expr]
+    S.tree [S.leaf "set"; S.leaf name; value; expr]
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = struct include Empty.To_string include To_string end in ()
@@ -91,3 +91,31 @@ struct
   let let_ name (_, value) (expr_info, expr) = expr_info, L.let_ name value expr
 end
 let () = let module T : Lang = Optimize(To_string) in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    Strlang.Tree.[
+      "let", (fun parse st ->
+          match st with
+          | Tree [_; Leaf name; value; expr] ->
+            let parse_nested = function
+              | Leaf n when n = name -> L.get name
+              | st -> parse st
+            in
+            L.let_ name (parse value) (parse_nested expr)
+          | st -> Parser.parse_error_at "invalid let" st);
+      "get", (fun _parse st ->
+          match st with
+          | Tree [_; Leaf name] ->
+            L.get name
+          | st -> Parser.parse_error_at "invalid get" st);
+      "set", (fun parse st ->
+          match st with
+          | Tree [_; Leaf name; value; expr] ->
+            L.set name (parse value) (parse expr)
+          | st -> Parser.parse_error_at "invalid break" st);
+    ]
+end

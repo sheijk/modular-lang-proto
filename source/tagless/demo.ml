@@ -395,6 +395,7 @@ struct
       None, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
 
       None, let_ "foo" (int 99) (get "foo");
+      None, let_ "foo" (int 99) (int 1 +. get "foo");
       None,
       let_ "foo" (int (-1))
         (get "foo" +.
@@ -437,6 +438,31 @@ let test_algo_optimized() =
   List.iter print (combine S.bool_tests O.bool_tests);
   List.iter print (combine S.int_tests O.int_tests)
 
+let test_parser() =
+  print_endline "Testing Algo_bindings parser";
+  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
+  let module O = Tests_algo_optimize(Opt) in
+  let module P = Parser.Parse(Algo_bindings.Parse_rules(Algo_bindings.Optimize(Algo_bindings.To_string))) in
+  let check_parser (st, _expected, (orig_info, orig_opt)) =
+    try
+      let info, opt = P.parse st in
+      if info = orig_info then
+        Tester_stats.ok "" ""
+      else
+        Tester_stats.fail (Strlang.Tree.to_string st) "info1" "info2";
+      if opt = orig_opt then
+        Tester_stats.ok (Strlang.Tree.to_string st) opt
+      else
+        Tester_stats.fail (Strlang.Tree.to_string st) orig_opt opt
+    with
+    | Parser.Parse_error (msg, _) ->
+      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt ("parser error: " ^ msg)
+    | _ ->
+      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt "exception"
+  in
+  let module St = Tests_algo_optimize(Algo_bindings.To_st(Strlang.Tree)) in
+  List.iter check_parser (combine St.int_tests O.int_tests)
+
 let () =
   try
     test_bool ();
@@ -448,6 +474,7 @@ let () =
     test_algo_compiled ();
     test_algo_optimized ();
     Experimental.test ();
+    test_parser ();
     Tester.finish ();
   with _ as error ->
     Tester_stats.fail "" "" "exception during test run";

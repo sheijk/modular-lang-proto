@@ -75,4 +75,21 @@ struct
   let ( *. ) = add_plus_one
   let ( /. ) = add_plus_one
 end
-(* let () = let module T : Lang = Count_ast_size in () *)
+let () = let module T : Lang = Count_ast_size in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    Strlang.Tree.[
+      "int", (fun _parse st ->
+          match st with
+          | Tree [_; Leaf value] -> L.int (int_of_string value)
+          | st -> Parser.parse_error_at "invalid int literal" st);
+      "+.", Parser.binop L.( +. );
+      "-.", Parser.binop L.( -. );
+      "*.", Parser.binop L.( *. );
+      "/.", Parser.binop L.( /. );
+    ]
+end

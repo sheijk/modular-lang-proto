@@ -161,3 +161,32 @@ struct
       Compiler.Static_value.unknown, L.if_ condition lhs rhs
 end
 let () = let module T : Lang = Optimize(To_string) in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    Strlang.Tree.[
+      "if", (fun parse st ->
+          match st with
+          | Tree [_; condition; true_; false_] ->
+            L.if_ (parse condition) (parse true_) (parse false_)
+          | st -> Parser.parse_error_at "invalid if" st);
+      "loop", (fun parse st ->
+          match st with
+          | Tree [_; body] ->
+            L.loop (parse body)
+          | st -> Parser.parse_error_at "invalid loop" st);
+      "break", (fun parse st ->
+          match st with
+          | Tree [_; value] ->
+            L.break (parse value)
+          | st -> Parser.parse_error_at "invalid break" st);
+      "loop_index", (fun _parse st ->
+          match st with
+          | Leaf _ ->
+            L.loop_index ()
+          | st -> Parser.parse_error_at "invalid loop_index" st);
+    ]
+end

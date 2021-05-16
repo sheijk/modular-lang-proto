@@ -30,3 +30,18 @@ struct
 end
 let () = let module T : Lang = Eval_compiled in ()
 
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    let module C = Calc.Parse_rules(L) in
+    let module A = Algo.Parse_rules(L) in
+    C.readers @
+    A.readers @
+    [
+      "=.", Parser.binop L.( =. );
+      "<.", Parser.binop L.( <. );
+      ">.", Parser.binop L.( >. );
+    ]
+end

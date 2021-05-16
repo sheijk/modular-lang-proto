@@ -40,3 +40,9 @@ struct
   type t = Compiler.Static_value.t * L.t
 end
 let () = let module T : Lang = Optimize(To_string) in ()
+
+module Parse_rules(L : Lang) =
+struct
+  type t = L.t
+  type reader = Strlang.Tree.t -> t
+end

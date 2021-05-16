@@ -72,4 +72,21 @@ struct
   let ( && ) lhs rhs = lhs + rhs + 1
   let ( || ) lhs rhs = lhs + rhs + 1
 end
-(* let () = let module T : Lang = Count_ast_size in () *)
+let () = let module T : Lang = Count_ast_size in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    Strlang.Tree.[
+      "bool", (fun _parse st ->
+          match st with
+          | Tree [_; Leaf "true"] -> L.bool true
+          | Tree [_; Leaf "false"] -> L.bool false
+          | st -> Parser.parse_error_at "invalid bool literal" st);
+      "&&", Parser.binop L.( && );
+      "||", Parser.binop L.( || );
+    ]
+end
+

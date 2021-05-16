@@ -51,3 +51,17 @@ struct
   include Bindings.Optimize(L)
 end
 let () = let module T : Lang = Optimize(To_string) in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    let module C = Calc.Parse_rules(L) in
+    let module A = Algo.Parse_rules(L) in
+    let module B = Bindings.Parse_rules(L) in
+    C.readers @
+    A.readers @
+    B.readers @
+    []
+end

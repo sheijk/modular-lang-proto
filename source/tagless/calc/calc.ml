@@ -124,3 +124,19 @@ struct
   let ( /. ) = combine_int_f ( / ) L.( /. )
 end
 let () = let module T : Lang = Optimize(To_string) in ()
+
+module Parse_rules(L : Lang) : (Parser.Rules with type t = L.t) =
+struct
+  include Empty.Parse_rules(L)
+
+  let readers =
+    let module B = Calc_bool.Parse_rules(L) in
+    let module I = Calc_int.Parse_rules(L) in
+    B.readers @
+    I.readers @
+    [
+      "=.", Parser.binop L.( =. );
+      "<.", Parser.binop L.( <. );
+      ">.", Parser.binop L.( >. );
+    ]
+end
