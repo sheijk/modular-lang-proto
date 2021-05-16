@@ -174,5 +174,76 @@ struct
   end
 end
 
+module Attempt2 =
+struct
+  module Parse(L : Calc_bool.Lang) =
+  struct
+    type t =
+      | Int of int
+      | Bool of bool
+      | String of string
+      | Node of L.t
+
+    type observed = L.t
+
+    let observe = function
+      | Node n -> n
+      | _ -> failwith "observe"
+
+    let string_each f str =
+      let rec check i =
+        if i >= String.length str then
+          true
+        else if f str.[i] then
+          check (i+1)
+        else
+          false
+      in
+      check 0
+
+    let is_number str = string_each (fun c -> c >= '0' && c <= '9') str
+
+    let leaf = function
+      | "true" -> Bool true
+      | "false" -> Bool false
+      | str when is_number str -> Int (int_of_string str)
+      | str -> String str
+
+    let tree = function
+      | [String "bool"; Bool b] -> Node (L.bool b)
+      | [String "&&"; Node l; Node r] -> Node L.(l && r)
+      | [String "||"; Node l; Node r] -> Node L.(l || r)
+      | _ -> failwith "invalid tree"
+  end
+  let () = let module T : String_lang = Parse(Calc_bool.To_string) in ()
+
+  module Test_cases(St : String_lang) =
+  struct
+    let test_cases = St.[
+        tree [leaf "bool"; leaf "true"];
+        tree [leaf "bool"; leaf "false"];
+        tree [leaf "&&";
+         tree [leaf "bool"; leaf "true"];
+         tree [leaf "bool"; leaf "false"]]
+      ]
+  end
+
+  let test () =
+    print_endline "Testing Experimental.Attempt2 parsing";
+    let module P = Parse(Calc_bool.To_string) in
+    let module Results = Test_cases(P) in
+    let module Cases = Test_cases(String_tree) in
+    let to_string st = String_tree.to_string st in
+    let test st result =
+      try
+        let result = P.observe result in
+        Printf.printf "  %s -> %s\n" (to_string st) result
+      with Failure str ->
+        Printf.printf "  %s -> error %s" (to_string st) str
+    in
+    List.iter2 test Cases.test_cases Results.test_cases
+end
+
 let test () =
+  Attempt2.test();
   Attempt1.test()
