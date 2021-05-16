@@ -1,35 +1,5 @@
-module type String_lang =
-sig
-  type t
-  val leaf : string -> t
-  val tree : t list -> t
-end
-
-module String_tree =
-struct
-  type t =
-    | Leaf of string
-    | Tree of t list
-
-  let leaf str = Leaf str
-  let tree children = Tree children
-
-  let rec to_string = function
-    | Leaf s -> s
-    | Tree children ->
-      let children_str = List.map to_string children in
-      "[" ^ String.concat ", " children_str ^ "]"
-
-  module Build =
-  struct
-    let s str = Leaf str
-    let t children = Tree children
-
-    let test =
-      t [s "int"; s "7"]
-  end
-end
-let () = let module M : String_lang = String_tree in ()
+module type String_lang = Strlang.Lang
+module String_tree = Strlang.Tree
 
 module Attempt1 =
 struct
@@ -249,33 +219,16 @@ end
 
 module Attempt3 =
 struct
-  module Lang_rules =
-  struct
-    type type_ = Int | Bool | Unit | Node
-    type rule = {
-      name : string;
-      parameters : (string * type_) list;
-      return_type : type_;
-    }
-
-    type t = string * (rule list)
-
-    let unit = Unit
-    let int = Int
-    let bool = Bool
-    let t _ = Node
-
-    let rule name parameters return_type = { name; parameters; return_type }
-
-    let include_ _ = failwith "include_"
-
-    let lang name rules = (name, rules)
-  end
-  let () = let module T : Module.Lang = Lang_rules in ()
-
   exception Parse_error of string * (String_tree.t option)
   let parse_error str = raise (Parse_error (str, None))
   let parse_error_at str st = raise (Parse_error (str, Some st))
+
+  let binop parse f = function
+    | String_tree.Tree [_; lhs_st; rhs_st] ->
+      let lhs = parse lhs_st in
+      let rhs = parse rhs_st in
+      f lhs rhs
+    | st -> parse_error_at "invalid binop" st
 
   module type Parse_rules =
   sig
@@ -290,13 +243,7 @@ struct
     type reader = String_tree.t -> t
 
     let readers parse =
-      let binop f = function
-        | String_tree.Tree [_; lhs_st; rhs_st] ->
-          let lhs = parse lhs_st in
-          let rhs = parse rhs_st in
-          f lhs rhs
-        | st -> parse_error_at "invalid binop" st
-      in
+      let binop f = binop parse f in
       String_tree.[
         "bool", (function
             | Tree [_; Leaf "true"] -> L.bool true
@@ -313,13 +260,7 @@ struct
     type reader = String_tree.t -> t
 
     let readers parse =
-      let binop f = function
-          | String_tree.Tree [_; lhs_st; rhs_st] ->
-            let lhs = parse lhs_st in
-            let rhs = parse rhs_st in
-            f lhs rhs
-          | st -> parse_error_at "invalid binop" st
-      in
+      let binop f = binop parse f in
       String_tree.[
       "int", (function
               | Tree [_; Leaf value] -> L.int (int_of_string value)
@@ -337,13 +278,7 @@ struct
     type reader = String_tree.t -> t
 
     let readers parse =
-      let binop f = function
-        | String_tree.Tree [_; lhs_st; rhs_st] ->
-          let lhs = parse lhs_st in
-          let rhs = parse rhs_st in
-          f lhs rhs
-        | st -> parse_error_at "invalid binop" st
-      in
+      let binop f = binop parse f in
       let module B = Calc_bool_parse_rules(L) in
       let module I = Calc_int_parse_rules(L) in
       B.readers parse @
