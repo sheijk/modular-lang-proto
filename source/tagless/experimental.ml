@@ -224,7 +224,10 @@ struct
         tree [leaf "bool"; leaf "false"];
         tree [leaf "&&";
          tree [leaf "bool"; leaf "true"];
-         tree [leaf "bool"; leaf "false"]]
+         tree [leaf "bool"; leaf "false"]];
+        tree [leaf "||";
+              tree [leaf "bool"; leaf "false"];
+              tree [leaf "bool"; leaf "true"]]
       ]
   end
 
@@ -244,6 +247,94 @@ struct
     List.iter2 test Cases.test_cases Results.test_cases
 end
 
+module Attempt3 =
+struct
+  module Lang_rules =
+  struct
+    type type_ = Int | Bool | Unit | Node
+    type rule = {
+      name : string;
+      parameters : (string * type_) list;
+      return_type : type_;
+    }
+
+    type t = string * (rule list)
+
+    let unit = Unit
+    let int = Int
+    let bool = Bool
+    let t _ = Node
+
+    let rule name parameters return_type = { name; parameters; return_type }
+
+    let include_ _ = failwith "include_"
+
+    let lang name rules = (name, rules)
+  end
+  let () = let module T : Module.Lang = Lang_rules in ()
+
+  exception Parse_error
+
+  module type Parse_rules =
+  sig
+    type t
+    type reader = String_tree.t -> t
+    val readers : reader -> (string * reader) list
+  end
+
+  module Calc_bool_parse_rules(L : Calc_bool.Lang) : (Parse_rules with type t = L.t) =
+  struct
+    type t = L.t
+    type reader = String_tree.t -> t
+
+    let readers parse =
+      let binop f = function
+          | String_tree.Tree [_; lhs_st; rhs_st] ->
+            let lhs = parse lhs_st in
+            let rhs = parse rhs_st in
+            f lhs rhs
+          | _ -> raise Parse_error
+      in
+      String_tree.[
+      "bool", (function
+              | Tree [_; Leaf "true"] -> L.bool true
+              | Tree [_; Leaf "false"] -> L.bool false
+              | _ -> raise Parse_error);
+      "&&", binop L.( && );
+      "||", binop L.( || );
+    ]
+  end
+
+  module Parse(P : Parse_rules) =
+  struct
+    type t = P.t
+    type reader = String_tree.t -> t
+
+    let rec parse st =
+      let readers = P.readers parse in
+      let hd =
+        match st with
+        | String_tree.Leaf str -> str
+        | String_tree.Tree (String_tree.Leaf str :: _) -> str
+        | _ -> raise Parse_error
+      in
+      let _, reader = List.find (fun (name, _) -> name = hd) readers in
+      reader st
+  end
+
+  let test () =
+    print_endline "Testing Experimental.Attempt3 parsing";
+    let module P = Parse(Calc_bool_parse_rules(Calc_bool.To_string)) in
+    let check st =
+      let ast = P.parse st in
+      Printf.printf "  %s => %s\n" (String_tree.to_string st) ast
+    in
+    let module C = Attempt2.Test_cases(String_tree) in
+    List.iter check C.test_cases
+end
+
 let test () =
+  Attempt1.test();
   Attempt2.test();
-  Attempt1.test()
+  Attempt3.test();
+  ()
