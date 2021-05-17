@@ -3,7 +3,7 @@ exception Parse_error of string * (Strlang.Tree.t option)
 let parse_error str = raise (Parse_error (str, None))
 let parse_error_at str st = raise (Parse_error (str, Some st))
 
-let binop f = fun parse st ->
+let binop f = fun _parse_rec parse st ->
   match st with
   | Strlang.Tree.Tree [_; lhs_st; rhs_st] ->
     let lhs = parse lhs_st in
@@ -15,7 +15,7 @@ module type Rules =
 sig
   type t
   type reader = Strlang.Tree.t -> t
-  val readers : (string * (reader -> reader)) list
+  val readers : (string * ((reader -> reader) -> reader -> reader)) list
 end
 
 module Parse(P : Rules) =
@@ -23,7 +23,7 @@ struct
   type t = P.t
   type reader = Strlang.Tree.t -> t
 
-  let rec parse st =
+  let rec parse_rec parse st =
     let hd =
       match st with
       | Strlang.Tree.Leaf str -> str
@@ -36,5 +36,7 @@ struct
       with Not_found ->
         parse_error_at ("identifier " ^ hd ^ " not found") st
     in
-    reader parse st
+    reader parse_rec parse st
+
+  let rec parse st = parse_rec parse st
 end

@@ -168,22 +168,22 @@ struct
 
   let readers =
     Strlang.Tree.[
-      "if", (fun parse st ->
+      "if", (fun _parse_rec parse st ->
           match st with
           | Tree [_; condition; true_; false_] ->
             L.if_ (parse condition) (parse true_) (parse false_)
           | st -> Parser.parse_error_at "invalid if" st);
-      "loop", (fun parse st ->
+      "loop", (fun _parse_rec parse st ->
           match st with
           | Tree [_; body] ->
             L.loop (parse body)
           | st -> Parser.parse_error_at "invalid loop" st);
-      "break", (fun parse st ->
+      "break", (fun _parse_rec parse st ->
           match st with
           | Tree [_; value] ->
             L.break (parse value)
           | st -> Parser.parse_error_at "invalid break" st);
-      "loop_index", (fun _parse st ->
+      "loop_index", (fun _parse_rec _parse st ->
           match st with
           | Leaf _ ->
             L.loop_index ()

@@ -15,7 +15,7 @@ struct
     S.tree [S.leaf "let"; S.leaf name; value; expr]
 
   let get name =
-    S.tree [S.leaf "get"; S.leaf name]
+    S.leaf name
 
   let set name value expr =
     S.tree [S.leaf "set"; S.leaf name; value; expr]
@@ -98,21 +98,21 @@ struct
 
   let readers =
     Strlang.Tree.[
-      "let", (fun parse st ->
+      "let", (fun parse_rec parse st ->
           match st with
           | Tree [_; Leaf name; value; expr] ->
-            let parse_nested = function
+            let rec parse_nested = function
               | Leaf n when n = name -> L.get name
-              | st -> parse st
+              | st -> parse_rec parse_nested st
             in
             L.let_ name (parse value) (parse_nested expr)
           | st -> Parser.parse_error_at "invalid let" st);
-      "get", (fun _parse st ->
+      "get", (fun _parse_rec _parse st ->
           match st with
           | Tree [_; Leaf name] ->
             L.get name
           | st -> Parser.parse_error_at "invalid get" st);
-      "set", (fun parse st ->
+      "set", (fun _parse_rec parse st ->
           match st with
           | Tree [_; Leaf name; value; expr] ->
             L.set name (parse value) (parse expr)

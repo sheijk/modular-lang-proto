@@ -80,7 +80,7 @@ struct
 
   let readers =
     Strlang.Tree.[
-      "bool", (fun _parse st ->
+      "bool", (fun _parse_rec _parse st ->
           match st with
           | Tree [_; Leaf "true"] -> L.bool true
           | Tree [_; Leaf "false"] -> L.bool false

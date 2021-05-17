@@ -83,7 +83,7 @@ struct
 
   let readers =
     Strlang.Tree.[
-      "int", (fun _parse st ->
+      "int", (fun _parse_rec _parse st ->
           match st with
           | Tree [_; Leaf value] -> L.int (int_of_string value)
           | st -> Parser.parse_error_at "invalid int literal" st);
