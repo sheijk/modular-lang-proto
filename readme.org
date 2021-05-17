@@ -34,8 +34,13 @@ A system to combine fragments of languages to form new ones
 Define values and use them, for dynamic variables and compiled w/o runtime
 ** DONE More complex compiler analysis
 Constant folding, transformations
+** DONE Parser
+Parsers which can be combined easily
 ** TODO Source Location handling
 Track source locations and use them for error reporting
+** TODO Optimization framework
+Should be able to combine contexts of Eval_compiled and Parser, combine several
+bottom/up or top/down passes into a single one
 
 * Approaches
 
