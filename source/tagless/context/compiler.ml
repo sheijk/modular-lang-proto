@@ -1,24 +1,30 @@
 
 module Info =
 struct
+  type location = { file : string; line : int; column : int; }
+  let location file line column = { file; line; column }
+
   type t = {
     loop_count : int;
     unbound_loop_index : bool;
+    loc : location option;
   }
 
-  let make () = { loop_count = 0; unbound_loop_index = false; }
+  let make () = { loop_count = 0; unbound_loop_index = false; loc = None; }
+  let at loc i = { i with loc = Some loc }
 
   let validate ctx = ctx.unbound_loop_index = false
 
   let merge a b = {
     loop_count = max a.loop_count b.loop_count;
     unbound_loop_index = a.unbound_loop_index || b.unbound_loop_index;
+    loc = match a.loc with Some _ -> a.loc | None -> b.loc;
   }
 
   let mark_loop_index ctx = { ctx with unbound_loop_index = true; }
   let mark_loop ctx =
     let loop_num = ctx.loop_count in
-    loop_num, { loop_count = loop_num + 1; unbound_loop_index = false; }
+    loop_num, { ctx with loop_count = loop_num + 1; unbound_loop_index = false; }
 end
 
 module Context =

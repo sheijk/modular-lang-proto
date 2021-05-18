@@ -251,7 +251,10 @@ struct
         is_bool true, bool true;
         is_bool true, bool true || bool false;
         is_bool false, bool false || bool false;
-        is_bool false, bool true && bool false;
+
+        is_bool false,
+        at (file "Tests_algo_bool.ml") ~line:10 ~column:8 @@
+        bool true && bool false;
       ]
 
   let int_tests = []
@@ -289,6 +292,7 @@ struct
              (int 100 +. get "foo"));
 
         is_int 14,
+        at (file "Tests_algo_bindings.ml") ~line:10 ~column:8 @@
         let_ "sum" (int 0)
           (loop
              (set "sum" (loop_index() *. loop_index() +. get "sum")
@@ -375,7 +379,9 @@ struct
       Some 1, int 1;
       Some 5, int 10 /. int 2;
       Some 10, int 3 +. int 7;
-      Some 15, int 10 +. int 5;
+      Some 15,
+      at (file "Tests_algo_optimize.ml") ~line:10 ~column:8 @@
+      int 10 +. int 5;
 
       Some 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
 

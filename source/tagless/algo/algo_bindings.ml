@@ -4,6 +4,7 @@ sig
   include Calc.Lang with type t := t
   include Algo.Lang with type t := t
   include Bindings.Lang with type t := t
+  include Locations.Lang with type t := t
 end
 
 module To_st(S : Strlang.Lang) =
@@ -12,6 +13,7 @@ struct
   include Calc.To_st(S)
   include Algo.To_st(S)
   include Bindings.To_st(S)
+  include Locations.To_st(S)
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Algo.Lang = To_string in ()
@@ -22,6 +24,7 @@ struct
   include Calc.Eval(I)
   include Algo.Eval(I)
   include Bindings.Eval(I)
+  include Locations.Eval(I)
 end
 let () = let module T : Algo.Lang = Eval(Interpreter.Dynamic) in ()
 
@@ -31,6 +34,7 @@ struct
   include Calc.Eval_compiled
   include Algo.Eval_compiled
   include Bindings.Eval_compiled
+  include Locations.Eval_compiled
 end
 let () = let module T : Lang = Eval_compiled in ()
 
@@ -49,6 +53,7 @@ struct
   include Calc.Optimize(L)
   include Algo.Optimize(L)
   include Bindings.Optimize(L)
+  include Locations.Optimize(L)
 end
 let () = let module T : Lang = Optimize(To_string) in ()
 
@@ -60,8 +65,10 @@ struct
     let module C = Calc.Parse_rules(L) in
     let module A = Algo.Parse_rules(L) in
     let module B = Bindings.Parse_rules(L) in
+    let module Loc = Locations.Parse_rules(L) in
     C.readers @
     A.readers @
     B.readers @
+    Loc.readers @
     []
 end
