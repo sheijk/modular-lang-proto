@@ -1,13 +1,16 @@
 
+module Location =
+struct
+  type t = { file : string; line : int; column : int; }
+  let at file line column = { file; line; column }
+end
+
 module Info =
 struct
-  type location = { file : string; line : int; column : int; }
-  let location file line column = { file; line; column }
-
   type t = {
     loop_count : int;
     unbound_loop_index : bool;
-    loc : location option;
+    loc : Location.t option;
   }
 
   let make () = { loop_count = 0; unbound_loop_index = false; loc = None; }

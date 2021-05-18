@@ -47,7 +47,7 @@ struct
   include File_compilation_unit
 
   let at file ~line ~column (info, t) =
-    let loc = Compiler.Info.location file line column in
+    let loc = Compiler.Location.at file line column in
     Compiler.Info.at loc info, t
 end
 let () = let module T : Lang = Eval_compiled in ()
