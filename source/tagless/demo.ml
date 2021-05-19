@@ -60,8 +60,7 @@ sig
   type t = string
   type value
 
-  val int_tests : (value option * string) list
-  val bool_tests : (value option * string) list
+  val tests : (value option * string) list
 end
 
 module type Test_cases =
@@ -69,8 +68,7 @@ sig
   module I : Interpreter.Create
 
   type t = I.t -> I.value
-  val int_tests : (I.value option * t) list
-  val bool_tests : (I.value option * t) list
+  val tests : (I.value option * t) list
 end
 
 module Test_runner(C : Test_names)(E : Test_cases with type I.value = C.value) =
@@ -80,10 +78,7 @@ struct
     Printf.printf "Testing %s\n" case_name;
     List.iter2 (fun (expected, string) (_, f) ->
         Tester.run string expected f E.I.value_string)
-      C.int_tests E.int_tests;
-    List.iter2 (fun (expected, string) (_, f) ->
-        Tester.run string expected f E.I.value_string)
-      C.bool_tests E.bool_tests
+      C.tests E.tests
 end
 
 module Tests_int(L : Calc_int.Lang) =
@@ -94,14 +89,12 @@ struct
 
   let is_int n = Some (I.int n)
 
-  let int_tests = L.[
+  let tests = L.[
       is_int 3, int 1 +. int 2;
       is_int 1, int 1;
       is_int 99, int 99;
       is_int 106, int 100 +. int 3 *. int 2;
     ]
-
-  let bool_tests = []
 end
 
 let test_int() =
@@ -120,7 +113,7 @@ struct
 
   let is_bool b = Some (I.bool b)
 
-  let bool_tests = L.[
+  let tests = L.[
       is_bool true, bool true;
       is_bool false, bool false;
       is_bool true, (bool true && bool true);
@@ -131,8 +124,6 @@ struct
       is_bool true, (bool true && (bool true || bool false));
       is_bool false, (bool true && bool false || bool false && bool true);
     ]
-
-  let int_tests = []
 end
 
 let test_bool () =
@@ -152,30 +143,26 @@ struct
   let is_int n = Some (I.int n)
   let is_bool b = Some (I.bool b)
 
-  let int_tests =
+  let tests =
     let module Ci = Tests_int(L) in
-    Ci.int_tests @ L.[
+    Ci.tests @ L.[
         is_int 1, int 1;
         is_int 15, int 10 +. int 5;
         is_int 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
-      (* Some 5, int 10 / int 2; *)
-    ]
+        (* Some 5, int 10 / int 2; *)
 
-  let bool_tests =
-    let module Cb = Tests_bool(L) in
-    Cb.bool_tests @ L.[
-      is_bool true, bool true;
-      is_bool true, int 4 <. int 10;
-      is_bool false, int 4 >. int 10;
-      is_bool true, int 3 =. int 3;
-      is_bool false, int 3 =. int 4;
-      is_bool true, int 3 >. int (-10);
-      is_bool false, int 3 >. int 3;
+        is_bool true, bool true;
+        is_bool true, int 4 <. int 10;
+        is_bool false, int 4 >. int 10;
+        is_bool true, int 3 =. int 3;
+        is_bool false, int 3 =. int 4;
+        is_bool true, int 3 >. int (-10);
+        is_bool false, int 3 >. int 3;
 
-      is_bool true, bool true || bool false;
-      is_bool false, bool false || bool false;
-      is_bool false, bool true && bool false;
-    ]
+        is_bool true, bool true || bool false;
+        is_bool false, bool false || bool false;
+        is_bool false, bool true && bool false;
+      ]
 
   (* Float tests from ast/Calc *)
   (*   run (i 8) Build.(to_i (f 8.)); *)
@@ -204,9 +191,9 @@ struct
   let is_int n = Some (I.int n)
   let is_bool b = Some (I.bool b)
 
-  let int_tests =
+  let tests =
     let module C = Tests_combined(L) in
-    C.int_tests @ L.[
+    C.tests @ L.[
         is_int 10, int 3 +. int 7;
         is_int 5, int 10 /. int 2;
         is_int 3, if_ (int 10 >. int 20) (int 666) (int 3);
@@ -220,13 +207,8 @@ struct
         is_int 22, (if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20));
         is_int 11, (if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20));
         is_int 1, (if_ (bool true) (int 1) (int 999));
-      ]
 
-  let bool_tests =
-    let module C = Tests_combined(L) in
-    C.bool_tests @ L.[
-      is_bool true, bool true;
-      (* true, int 1 =. loop (int 1); *)
+        is_bool true, bool true;
     ]
 end
 
@@ -246,8 +228,7 @@ struct
 
     let is_bool b = Some (I.bool b)
 
-    let bool_tests =
-    L.[
+    let tests = L.[
         is_bool true, bool true;
         is_bool true, bool true || bool false;
         is_bool false, bool false || bool false;
@@ -256,9 +237,7 @@ struct
         at (file "Tests_algo_bool.ml") ~line:10 ~column:8 @@
         bool true && bool false;
       ]
-
-  let int_tests = []
-end
+  end
 
 let test_algo_bool() =
   let module T =
@@ -277,13 +256,9 @@ struct
   let is_int n = Some (I.int n)
   let is_bool b = Some (I.bool b)
 
-  let bool_tests =
+  let tests =
     let module C = Tests_algo(L) in
-    C.bool_tests @ []
-
-  let int_tests =
-    let module C = Tests_algo(L) in
-    C.int_tests @ L.[
+    C.tests @ L.[
         is_int 99, let_ "foo" (int 99) (get "foo");
         is_int 123,
         let_ "foo" (int (-1))
@@ -317,13 +292,9 @@ struct
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
 
-  let bool_tests =
+  let tests =
     let module B = Tests_algo_bindings(L) in
-    B.bool_tests @ []
-
-  let int_tests =
-    let module B = Tests_algo_bindings(L) in
-    B.int_tests @ L.[
+    B.tests @ L.[
       None, if_ (bool false) (loop_index()) (int 0);
       None,
       let_ "x" (int 10)
@@ -349,10 +320,7 @@ let test_algo_compiled () =
   let value_string = Interpreter.Default_values.value_string in
   List.iter2 (fun (expected, string) (_, (info, f)) ->
       Tester_legacy.run string expected (check_and_run info f) value_string)
-    P.bool_tests C.bool_tests;
-  List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester_legacy.run string expected (check_and_run info f) value_string)
-    P.int_tests C.int_tests
+    P.tests C.tests
 
 module Tests_algo_optimize(L : Algo_bindings.Lang) =
 struct
