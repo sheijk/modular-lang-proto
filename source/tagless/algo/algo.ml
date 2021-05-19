@@ -77,9 +77,10 @@ struct
         (Compiler.Info.merge f_info t_info)
     in
     info, fun (ctx : Compiler.Context.t) ->
-      let condition = condition ctx
-      and true_ = true_ ctx
-      and false_ = false_ ctx
+      let open Compiler.Result.Syntax in
+      let+ condition = condition ctx
+      and+ true_ = true_ ctx
+      and+ false_ = false_ ctx
       in
       fun ctx ->
         if (I.match_bool ((=) true) (condition ctx)) then
@@ -91,7 +92,8 @@ struct
     let _loop_num, info = Compiler.Info.mark_loop b_info in
     info, fun (ctx : Compiler.Context.t) ->
       let loop_index = ref 0 in
-      let body = body @@ Compiler.Context.new_loop_index ctx loop_index in
+      let open Compiler.Result.Syntax in
+      let+ body = body @@ Compiler.Context.new_loop_index ctx loop_index in
       fun ctx ->
         let rec loop index =
           loop_index := index;
@@ -107,7 +109,8 @@ struct
 
   let break (v_info, value) =
     v_info, fun ctx ->
-      let value = value ctx in
+      let open Compiler.Result.Syntax in
+      let+ value = value ctx in
       fun ctx ->
         I.match_int
           (fun i -> raise (Loop_break i))
@@ -117,9 +120,10 @@ struct
     Compiler.Info.mark_loop_index @@ Compiler.Info.make(),
     function
     | { Compiler.Context.loop_index = Some index; _ } ->
+      Compiler.Result.ok @@
       fun _ -> I.int (!index)
     | { Compiler.Context.loop_index = None; _ } ->
-      failwith "index used outside of loop"
+      Compiler.Result.error None "index used outside of loop"
 end
 let () = let module T : Lang = Eval_compiled in ()
 

@@ -335,12 +335,16 @@ let test_algo_compiled () =
   print_endline "Testing Algo_calc compiled";
   let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
   let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
-  let check_and_run info f ctx =
-    let f = f @@ Compiler.Context.make () in
+  let check_and_run info compile ctx =
+    let run =
+      match compile @@ Compiler.Context.make () with
+      | Result.Ok x -> x
+      | Result.Error _ -> failwith "errors"
+    in
     if false = Compiler.Info.validate info then
-      failwith "compiler error"
+      failwith "invalid compiler info"
     else
-      f ctx
+      run ctx
   in
   let value_string = Interpreter.Default_values.value_string in
   List.iter2 (fun (expected, string) (_, (info, f)) ->

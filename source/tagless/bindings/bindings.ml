@@ -48,24 +48,28 @@ struct
 
   let let_ name (_v_info, value) ((e_info : Compiler.Info.t), expr) =
     e_info, fun ctx ->
+      let open Compiler.Result.Syntax in
       let store = ref (I.int 0) in
-      let value = value ctx in
-      let expr = expr (Compiler.Context.new_variable ctx name store) in
+      let+ value = value ctx
+      and+ expr = expr (Compiler.Context.new_variable ctx name store)
+      in
       fun rt ->
         store := value rt;
         expr rt
 
   let get name =
     (Compiler.Info.make ()), fun ctx ->
-      let store = Compiler.Context.find_variable ctx name in
-      fun _ ->
-        !store
+      let open Compiler.Result.Syntax in
+      let+ store = Compiler.Context.find_variable ctx name in
+      fun _ -> !store
 
   let set name (_v_info, value) (e_info, expr) =
     e_info, fun ctx ->
-      let store = Compiler.Context.find_variable ctx name in
-      let value = value ctx in
-      let expr = expr ctx in
+      let open Compiler.Result.Syntax in
+      let+ store = Compiler.Context.find_variable ctx name
+      and+ value = value ctx
+      and+ expr = expr ctx
+      in
       fun rt ->
         store := value rt;
         expr rt

@@ -41,8 +41,9 @@ let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,
   fun ctx ->
-    let lhs = lhs ctx
-    and rhs = rhs ctx
+    let open Compiler.Result.Syntax in
+    let+ lhs = lhs ctx
+    and+ rhs = rhs ctx
     in
     fun rt ->
       let module I = Interpreter.No_runtime in
@@ -53,7 +54,9 @@ module Eval_compiled =
 struct
   include Empty.Eval_compiled
 
-  let int i = Compiler.Info.make(), fun _ _ -> I.int i
+  let int i = Compiler.Info.make(), fun _ctx ->
+      Compiler.Result.ok @@
+      fun _rt -> I.int i
 
   let ( +. ) = apply ( + )
   let ( -. ) = apply ( - )

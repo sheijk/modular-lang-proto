@@ -40,8 +40,9 @@ let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 let apply f (lhs_info, lhs) (rhs_info, rhs) =
   Compiler.Info.merge lhs_info rhs_info,
   fun ctx ->
-    let lhs = lhs ctx
-    and rhs = rhs ctx
+    let open Compiler.Result.Syntax in
+    let+ lhs = lhs ctx
+    and+ rhs = rhs ctx
     in
     fun rt ->
       let module I = Interpreter.No_runtime in

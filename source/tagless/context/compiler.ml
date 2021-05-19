@@ -5,6 +5,74 @@ struct
   let at file line column = { file; line; column }
 end
 
+module Ocaml_result = Result
+
+module Result =
+struct
+  type error = {
+    loc : Location.t option;
+    message : string;
+  }
+
+  type 'a t = ('a, error list) Result.t
+  let ok result = Result.ok result
+  let error loc message = Result.error [{ loc; message }]
+  let error_no_loc message = error None message
+  let errors e = Result.error e
+
+  let bind = Result.bind
+  let apply f x = Result.map x f
+  let product a b =
+    match a, b with
+    | Result.Ok a, Result.Ok b ->
+      Result.Ok (a, b)
+    | Error ae, Error be ->
+      Result.Error (ae @ be)
+    | Error e, Ok _
+    | Ok _, Error e ->
+      Result.Error e
+
+  module Syntax =
+  struct
+    let ( let+ ) = apply
+    let ( and+ ) = product
+    let ( let* ) = bind
+    let ( and* ) = product
+  end
+end
+
+module Test =
+struct
+  let print_result = function
+    | Ocaml_result.Ok str ->
+      print_endline ("ok " ^ str)
+    | Error errors ->
+      List.map (fun { Result.message; _ } -> "error " ^ message) errors
+        |> String.concat ", "
+        |> print_endline
+
+  let () =
+    let open Result.Syntax in
+
+    print_result
+      (let* x = Result.ok "foo" in
+       Result.ok x);
+
+    print_result
+      (let* x = Result.ok "foo"
+       and* y = Result.ok "bar" in
+       Result.ok @@ x ^ y);
+
+    print_result
+      (let+ x = Result.error_no_loc "oh no" in
+       x);
+
+  print_result
+      (let+ x = Result.error_no_loc "oh no"
+       and+ y = Result.error_no_loc "not again" in
+       x ^ y)
+end
+
 module Info =
 struct
   type t = {
@@ -46,9 +114,9 @@ struct
 
   let find_variable ctx name =
     let rec find = function
-      | (var, r) :: _ when var = name -> r
+      | (var, r) :: _ when var = name -> Result.ok r
       | _ :: remaining -> find remaining
-      | [] -> failwith ("accessed undefined variable " ^ name)
+      | [] -> Result.error_no_loc ("accessed undefined variable " ^ name)
     in
     find ctx.variables
 end
