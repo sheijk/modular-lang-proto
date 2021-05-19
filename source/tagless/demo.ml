@@ -1,4 +1,16 @@
 
+module type Test_cases =
+sig
+  type t
+  val tests : t list
+end
+
+module type Test_suite =
+sig
+  include Test_cases
+  val run : t -> unit
+end
+
 module Tester_stats =
 struct
   let errors = ref 0
@@ -17,15 +29,27 @@ struct
   let finish () =
     if ((!errors) > 0) then begin
       Printf.printf "%d tests run, %d tests failed" (!total) (!errors);
-      exit 1
+      false
     end else begin
       Printf.printf "%d tests run\n" (!total);
-      exit 0
+      true
     end
+
+  let suites : (string * (module Test_suite)) list ref = ref []
+
+  let add name suite =
+    suites := (name, suite) :: !suites
+
+  let run () =
+    let run_suite (name, suite) =
+      Printf.printf "Test suite %s\n" name;
+      let module S = (val suite : Test_suite) in
+      List.iter S.run S.tests
+    in
+    List.iter run_suite !suites
 end
 
 module Tester_f(I : Interpreter.Create) : sig
-  val finish : unit -> unit
   val run :
     string ->
     I.value option ->
@@ -34,8 +58,6 @@ module Tester_f(I : Interpreter.Create) : sig
     unit
 end = struct
   include Tester_stats
-
-  let finish = Tester_stats.finish
 
   let to_result_str f opt =
     Option.value ~default:"error" @@ Option.map f opt
@@ -52,18 +74,17 @@ end = struct
       fail string (to_result_str expected) (to_result_str result)
 end
 
-module Tester = Tester_f(Interpreter.Dynamic)
 module Tester_legacy = Tester_f(Interpreter.No_runtime)
 
 module type Test_names =
 sig
   type t = string
-  type value
+  type value = Interpreter.Default_values.value
 
   val tests : (value option * string) list
 end
 
-module type Test_cases =
+module type Test_cases_eval =
 sig
   module I : Interpreter.Create
 
@@ -71,14 +92,25 @@ sig
   val tests : (I.value option * t) list
 end
 
-module Test_runner(C : Test_names)(E : Test_cases with type I.value = C.value) =
+let combine input testcases =
+  List.map2
+    (fun (_, name) (expected, testcase) -> name, expected, testcase)
+    input
+    testcases
+
+module Test_runner_eval(C : Test_names)(E : Test_cases_eval with type I.value = C.value) =
 struct
-  let run case_name =
+  type t = (string * C.value option * E.t)
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (string, expected, f) =
     let module Tester = Tester_f(E.I) in
+    Tester.run string expected f E.I.value_string
+
+  let run_all case_name =
     Printf.printf "Testing %s\n" case_name;
-    List.iter2 (fun (expected, string) (_, f) ->
-        Tester.run string expected f E.I.value_string)
-      C.tests E.tests
+    List.iter run tests
 end
 
 module Tests_int(L : Calc_int.Lang) =
@@ -97,13 +129,13 @@ struct
     ]
 end
 
-let test_int() =
-  let module T =
-    Test_runner
+let add_test_int() =
+  let module T : Test_suite =
+    Test_runner_eval
       (Tests_int(Calc_int.To_string))
       (Tests_int(Calc_int.Eval(Interpreter.No_runtime)))
   in
-  T.run "Calc_int"
+  Tester_stats.add "Calc_int" (module T)
 
 module Tests_bool(L : Calc_bool.Lang) =
 struct
@@ -126,13 +158,13 @@ struct
     ]
 end
 
-let test_bool () =
+let add_test_bool () =
   let module T =
-    Test_runner
+    Test_runner_eval
       (Tests_bool(Calc_bool.To_string))
       (Tests_bool(Calc_bool.Eval(Interpreter.No_runtime)))
   in
-  T.run "Calc_bool"
+  Tester_stats.add "Calc_bool" (module T)
 
 module Tests_combined(L : Calc.Lang) =
 struct
@@ -174,13 +206,13 @@ struct
   (*   run (f 8.) Build.(f 3. + i 5); *)
 end
 
-let test_combined() =
+let add_test_calc() =
   let module T =
-    Test_runner
+    Test_runner_eval
       (Tests_combined(Calc.To_string))
       (Tests_combined(Calc.Eval(Interpreter.No_runtime)))
   in
-  T.run "Calc"
+  Tester_stats.add "Calc" (module T)
 
 module Tests_algo(L : Algo_calc.Lang) =
 struct
@@ -212,13 +244,13 @@ struct
     ]
 end
 
-let test_algo() =
+let add_test_algo() =
   let module T =
-    Test_runner
+    Test_runner_eval
       (Tests_algo(Algo_calc.To_string))
       (Tests_algo(Algo_calc.Eval(Interpreter.Dynamic)))
   in
-  T.run "Algo_calc"
+  Tester_stats.add "Algo_calc" (module T)
 
 module Tests_algo_bool(L : Algo_bool.Lang) =
 struct
@@ -239,13 +271,13 @@ struct
       ]
   end
 
-let test_algo_bool() =
+let add_test_algo_bool() =
   let module T =
-    Test_runner
+    Test_runner_eval
       (Tests_algo_bool(Algo_bool.To_string))
       (Tests_algo_bool(Algo_bool.Eval(Interpreter.Dynamic)))
   in
-  T.run "Algo_bool"
+  Tester_stats.add "Algo_bool" (module T)
 
 module Tests_algo_bindings(L : Algo_bindings.Lang) =
 struct
@@ -277,13 +309,13 @@ struct
       ]
 end
 
-let test_algo_bindings () =
+let add_test_algo_bindings () =
   let module T =
-    Test_runner
+    Test_runner_eval
       (Tests_algo_bindings(Algo_bindings.To_string))
       (Tests_algo_bindings(Algo_bindings.Eval(Interpreter.Dynamic)))
   in
-  T.run "Algo_bindings"
+  Tester_stats.add "Algo_bindings" (module T)
 
 module Tests_algo_compiler_errors(L : Algo_bindings.Lang) =
 struct
@@ -390,12 +422,6 @@ struct
     ]
 end
 
-let combine input testcases =
-  List.map2
-    (fun (_, name) (expected, testcase) -> name, expected, testcase)
-    input
-    testcases
-
 let test_algo_optimized() =
   print_endline "Testing Algo_bindings optimization";
   let module S = Tests_algo_optimize(Algo_bindings.To_string) in
@@ -443,19 +469,20 @@ let test_parser() =
 
 let () =
   try
-    test_bool ();
-    test_int ();
-    test_combined ();
-    test_algo ();
-    test_algo_bool ();
-    test_algo_bindings ();
+    Experimental.test ();
+    add_test_bool ();
+    add_test_int ();
+    add_test_calc ();
+    add_test_algo ();
+    add_test_algo_bool ();
+    add_test_algo_bindings ();
     test_algo_compiled ();
     test_algo_optimized ();
-    Experimental.test ();
     test_parser ();
-    Tester.finish ();
+    Tester_stats.run ();
+    exit (if Tester_stats.finish () then 0 else 1);
   with _ as error ->
     Tester_stats.fail "" "" "exception during test run";
-    Tester.finish ();
+    ignore (Tester_stats.finish ());
     raise error
 
