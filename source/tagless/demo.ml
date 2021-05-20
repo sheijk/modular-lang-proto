@@ -375,6 +375,7 @@ let add_test_algo_compiled () =
 module Tests_algo_optimize(L : Algo_bindings.Lang) =
 struct
   type t = L.t
+  type value = dyn_value
 
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
@@ -442,12 +443,19 @@ struct
     ]
 end
 
-let test_algo_optimized() =
-  print_endline "Testing Algo_bindings optimization";
-  let module S = Tests_algo_optimize(Algo_bindings.To_string) in
-  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
-  let module O = Tests_algo_optimize(Opt) in
-  let print (unoptimized, expect, (info, optimized)) =
+module type Test_cases_optimize =
+sig
+  type t = Compiler.Static_value.t * string
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_optimize(C : Test_names)(E : Test_cases_optimize) : Test_suite =
+struct
+  type t = (string * C.value option * E.t)
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (unoptimized, expect, (info, optimized)) =
     let result_str = optimized ^ ", " ^ Compiler.Static_value.to_string info in
     match expect, Compiler.Static_value.is_known info with
     | Some _, true
@@ -457,9 +465,15 @@ let test_algo_optimized() =
       Tester_stats.fail unoptimized "not to infer value" result_str
     | Some _, false ->
       Tester_stats.fail unoptimized "to infer value" optimized
-      (* Printf.printf "  err-opt %s to %s, failed to infer value\n" unoptimized optimized *)
-  in
-  List.iter print (combine S.tests O.tests)
+end
+
+let test_algo_optimized() =
+  print_endline "Testing Algo_bindings optimization";
+  let module S = Tests_algo_optimize(Algo_bindings.To_string) in
+  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
+  let module O = Tests_algo_optimize(Opt) in
+  let module T = Test_runner_optimize(S)(O) in
+  List.iter T.run T.tests
 
 let test_parser() =
   print_endline "Testing Algo_bindings parser";
