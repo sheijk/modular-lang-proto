@@ -76,10 +76,12 @@ end
 
 module Tester_legacy = Tester_f(Interpreter.No_runtime)
 
+type dyn_value = Interpreter.Default_values.value
+
 module type Test_names =
 sig
   type t = string
-  type value = Interpreter.Default_values.value
+  type value = dyn_value
 
   val tests : (value option * string) list
 end
@@ -320,6 +322,7 @@ let add_test_algo_bindings () =
 module Tests_algo_compiler_errors(L : Algo_bindings.Lang) =
 struct
   type t = L.t
+  type value = dyn_value
 
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
@@ -334,25 +337,40 @@ struct
     ]
 end
 
-let test_algo_compiled () =
+module type Test_cases_compile =
+sig
+  type t = Compiler.Info.t * (Compiler.Context.t -> (Interpreter.No_runtime.t -> dyn_value) Compiler.Result.t)
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_compile(C : Test_names)(E : Test_cases_compile) : Test_suite =
+struct
+  type t = (string * C.value option * E.t)
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (string, expected, (info, f)) =
+    let check_and_run info compile ctx =
+      let run =
+        match compile @@ Compiler.Context.make () with
+        | Result.Ok x -> x
+        | Result.Error _ -> failwith "errors"
+      in
+      if false = Compiler.Info.validate info then
+        failwith "invalid compiler info"
+      else
+        run ctx
+    in
+    let value_string = Interpreter.Default_values.value_string in
+    Tester_legacy.run string expected (check_and_run info f) value_string
+end
+
+let add_test_algo_compiled () =
   print_endline "Testing Algo_calc compiled";
   let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
   let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
-  let check_and_run info compile ctx =
-    let run =
-      match compile @@ Compiler.Context.make () with
-      | Result.Ok x -> x
-      | Result.Error _ -> failwith "errors"
-    in
-    if false = Compiler.Info.validate info then
-      failwith "invalid compiler info"
-    else
-      run ctx
-  in
-  let value_string = Interpreter.Default_values.value_string in
-  List.iter2 (fun (expected, string) (_, (info, f)) ->
-      Tester_legacy.run string expected (check_and_run info f) value_string)
-    P.tests C.tests
+  let module T = Test_runner_compile(P)(C) in
+  Tester_stats.add "Algo_bindings compiled" (module T)
 
 module Tests_algo_optimize(L : Algo_bindings.Lang) =
 struct
@@ -476,7 +494,7 @@ let () =
     add_test_algo ();
     add_test_algo_bool ();
     add_test_algo_bindings ();
-    test_algo_compiled ();
+    add_test_algo_compiled ();
     test_algo_optimized ();
     test_parser ();
     Tester_stats.run ();
