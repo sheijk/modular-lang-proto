@@ -467,20 +467,37 @@ struct
       Tester_stats.fail unoptimized "to infer value" optimized
 end
 
-let test_algo_optimized() =
-  print_endline "Testing Algo_bindings optimization";
+let add_test_algo_optimized() =
   let module S = Tests_algo_optimize(Algo_bindings.To_string) in
   let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
   let module O = Tests_algo_optimize(Opt) in
   let module T = Test_runner_optimize(S)(O) in
-  List.iter T.run T.tests
+  Tester_stats.add "Algo_bindings optimization" (module T)
 
-let test_parser() =
-  print_endline "Testing Algo_bindings parser";
-  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
-  let module O = Tests_algo_optimize(Opt) in
-  let module P = Parser.Parse(Algo_bindings.Parse_rules(Algo_bindings.Optimize(Algo_bindings.To_string))) in
-  let check_parser (st, _expected, (orig_info, orig_opt)) =
+module type Test_names_parse =
+sig
+  type t = Strlang.Tree.t
+  type value = dyn_value
+
+  val tests : (value option * t) list
+end
+
+module type Test_cases_parse =
+sig
+  type t = Compiler.Static_value.t * string
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_parse
+    (C : Test_names_parse)
+    (E : Test_cases_parse)
+    (P : sig val parse : Strlang.Tree.t -> E.t end) : Test_suite =
+struct
+  type t = Strlang.Tree.t * dyn_value option * E.t
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (st, _expected, (orig_info, orig_opt)) =
     try
       let info, opt = P.parse st in
       if info = orig_info then
@@ -496,9 +513,16 @@ let test_parser() =
       Tester_stats.fail (Strlang.Tree.to_string st) orig_opt ("parser error: " ^ msg)
     | _ ->
       Tester_stats.fail (Strlang.Tree.to_string st) orig_opt "exception"
-  in
+end
+
+let add_test_parser() =
+  print_endline "Testing Algo_bindings parser";
+  let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
+  let module O = Tests_algo_optimize(Opt) in
+  let module P = Parser.Parse(Algo_bindings.Parse_rules(Algo_bindings.Optimize(Algo_bindings.To_string))) in
   let module St = Tests_algo_optimize(Algo_bindings.To_st(Strlang.Tree)) in
-  List.iter check_parser (combine St.tests O.tests)
+  let module T = Test_runner_parse(St)(O)(P) in
+  Tester_stats.add "Algo_bindings parser" (module T)
 
 let () =
   try
@@ -510,8 +534,8 @@ let () =
     add_test_algo_bool ();
     add_test_algo_bindings ();
     add_test_algo_compiled ();
-    test_algo_optimized ();
-    test_parser ();
+    add_test_algo_optimized ();
+    add_test_parser ();
     Tester_stats.run ();
     exit (if Tester_stats.finish () then 0 else 1);
   with _ as error ->
