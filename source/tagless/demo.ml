@@ -49,6 +49,14 @@ struct
     List.iter run_suite (List.rev !suites)
 end
 
+type dyn_value = Interpreter.Default_values.value
+
+let combine input testcases =
+  List.map2
+    (fun (_, name) (expected, testcase) -> name, expected, testcase)
+    input
+    testcases
+
 module Tester_f(I : Interpreter.Create) : sig
   val run :
     string ->
@@ -76,8 +84,6 @@ end
 
 module Tester_legacy = Tester_f(Interpreter.No_runtime)
 
-type dyn_value = Interpreter.Default_values.value
-
 module type Test_names =
 sig
   type t = string
@@ -94,12 +100,6 @@ sig
   val tests : (I.value option * t) list
 end
 
-let combine input testcases =
-  List.map2
-    (fun (_, name) (expected, testcase) -> name, expected, testcase)
-    input
-    testcases
-
 module Test_runner_eval(C : Test_names)(E : Test_cases_eval with type I.value = C.value) =
 struct
   type t = (string * C.value option * E.t)
@@ -113,6 +113,99 @@ struct
   let run_all case_name =
     Printf.printf "Testing %s\n" case_name;
     List.iter run tests
+end
+
+module type Test_cases_compile =
+sig
+  type t = Compiler.Info.t * (Compiler.Context.t -> (Interpreter.No_runtime.t -> dyn_value) Compiler.Result.t)
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_compile(C : Test_names)(E : Test_cases_compile) : Test_suite =
+struct
+  type t = (string * C.value option * E.t)
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (string, expected, (info, f)) =
+    let check_and_run info compile ctx =
+      let run =
+        match compile @@ Compiler.Context.make () with
+        | Result.Ok x -> x
+        | Result.Error _ -> failwith "errors"
+      in
+      if false = Compiler.Info.validate info then
+        failwith "invalid compiler info"
+      else
+        run ctx
+    in
+    let value_string = Interpreter.Default_values.value_string in
+    Tester_legacy.run string expected (check_and_run info f) value_string
+end
+
+module type Test_cases_optimize =
+sig
+  type t = Compiler.Static_value.t * string
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_optimize(C : Test_names)(E : Test_cases_optimize) : Test_suite =
+struct
+  type t = (string * C.value option * E.t)
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (unoptimized, expect, (info, optimized)) =
+    let result_str = optimized ^ ", " ^ Compiler.Static_value.to_string info in
+    match expect, Compiler.Static_value.is_known info with
+    | Some _, true
+    | None, false ->
+      Tester_stats.ok unoptimized result_str
+    | None, true ->
+      Tester_stats.fail unoptimized "not to infer value" result_str
+    | Some _, false ->
+      Tester_stats.fail unoptimized "to infer value" optimized
+end
+
+module type Test_names_parse =
+sig
+  type t = Strlang.Tree.t
+  type value = dyn_value
+
+  val tests : (value option * t) list
+end
+
+module type Test_cases_parse =
+sig
+  type t = Compiler.Static_value.t * string
+  val tests : (dyn_value option * t) list
+end
+
+module Test_runner_parse
+    (C : Test_names_parse)
+    (E : Test_cases_parse)
+    (P : sig val parse : Strlang.Tree.t -> E.t end) : Test_suite =
+struct
+  type t = Strlang.Tree.t * dyn_value option * E.t
+
+  let tests : t list = combine C.tests E.tests
+
+  let run (st, _expected, (orig_info, orig_opt)) =
+    try
+      let info, opt = P.parse st in
+      if info = orig_info then
+        Tester_stats.ok "" ""
+      else
+        Tester_stats.fail (Strlang.Tree.to_string st) "info1" "info2";
+      if opt = orig_opt then
+        Tester_stats.ok (Strlang.Tree.to_string st) opt
+      else
+        Tester_stats.fail (Strlang.Tree.to_string st) orig_opt opt
+    with
+    | Parser.Parse_error (msg, _) ->
+      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt ("parser error: " ^ msg)
+    | _ ->
+      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt "exception"
 end
 
 module Tests_int(L : Calc_int.Lang) =
@@ -337,34 +430,6 @@ struct
     ]
 end
 
-module type Test_cases_compile =
-sig
-  type t = Compiler.Info.t * (Compiler.Context.t -> (Interpreter.No_runtime.t -> dyn_value) Compiler.Result.t)
-  val tests : (dyn_value option * t) list
-end
-
-module Test_runner_compile(C : Test_names)(E : Test_cases_compile) : Test_suite =
-struct
-  type t = (string * C.value option * E.t)
-
-  let tests : t list = combine C.tests E.tests
-
-  let run (string, expected, (info, f)) =
-    let check_and_run info compile ctx =
-      let run =
-        match compile @@ Compiler.Context.make () with
-        | Result.Ok x -> x
-        | Result.Error _ -> failwith "errors"
-      in
-      if false = Compiler.Info.validate info then
-        failwith "invalid compiler info"
-      else
-        run ctx
-    in
-    let value_string = Interpreter.Default_values.value_string in
-    Tester_legacy.run string expected (check_and_run info f) value_string
-end
-
 let add_test_algo_compiled () =
   let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
   let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
@@ -442,77 +507,12 @@ struct
     ]
 end
 
-module type Test_cases_optimize =
-sig
-  type t = Compiler.Static_value.t * string
-  val tests : (dyn_value option * t) list
-end
-
-module Test_runner_optimize(C : Test_names)(E : Test_cases_optimize) : Test_suite =
-struct
-  type t = (string * C.value option * E.t)
-
-  let tests : t list = combine C.tests E.tests
-
-  let run (unoptimized, expect, (info, optimized)) =
-    let result_str = optimized ^ ", " ^ Compiler.Static_value.to_string info in
-    match expect, Compiler.Static_value.is_known info with
-    | Some _, true
-    | None, false ->
-      Tester_stats.ok unoptimized result_str
-    | None, true ->
-      Tester_stats.fail unoptimized "not to infer value" result_str
-    | Some _, false ->
-      Tester_stats.fail unoptimized "to infer value" optimized
-end
-
 let add_test_algo_optimized() =
   let module S = Tests_algo_optimize(Algo_bindings.To_string) in
   let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
   let module O = Tests_algo_optimize(Opt) in
   let module T = Test_runner_optimize(S)(O) in
   Tester_stats.add "Algo_bindings optimization" (module T)
-
-module type Test_names_parse =
-sig
-  type t = Strlang.Tree.t
-  type value = dyn_value
-
-  val tests : (value option * t) list
-end
-
-module type Test_cases_parse =
-sig
-  type t = Compiler.Static_value.t * string
-  val tests : (dyn_value option * t) list
-end
-
-module Test_runner_parse
-    (C : Test_names_parse)
-    (E : Test_cases_parse)
-    (P : sig val parse : Strlang.Tree.t -> E.t end) : Test_suite =
-struct
-  type t = Strlang.Tree.t * dyn_value option * E.t
-
-  let tests : t list = combine C.tests E.tests
-
-  let run (st, _expected, (orig_info, orig_opt)) =
-    try
-      let info, opt = P.parse st in
-      if info = orig_info then
-        Tester_stats.ok "" ""
-      else
-        Tester_stats.fail (Strlang.Tree.to_string st) "info1" "info2";
-      if opt = orig_opt then
-        Tester_stats.ok (Strlang.Tree.to_string st) opt
-      else
-        Tester_stats.fail (Strlang.Tree.to_string st) orig_opt opt
-    with
-    | Parser.Parse_error (msg, _) ->
-      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt ("parser error: " ^ msg)
-    | _ ->
-      Tester_stats.fail (Strlang.Tree.to_string st) orig_opt "exception"
-end
 
 let add_test_parser() =
   let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
