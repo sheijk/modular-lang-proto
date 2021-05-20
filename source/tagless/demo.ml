@@ -46,7 +46,7 @@ struct
       let module S = (val suite : Test_suite) in
       List.iter S.run S.tests
     in
-    List.iter run_suite !suites
+    List.iter run_suite (List.rev !suites)
 end
 
 module Tester_f(I : Interpreter.Create) : sig
@@ -366,7 +366,6 @@ struct
 end
 
 let add_test_algo_compiled () =
-  print_endline "Testing Algo_calc compiled";
   let module P = Tests_algo_compiler_errors(Algo_bindings.To_string) in
   let module C = Tests_algo_compiler_errors(Algo_bindings.Eval_compiled) in
   let module T = Test_runner_compile(P)(C) in
@@ -516,7 +515,6 @@ struct
 end
 
 let add_test_parser() =
-  print_endline "Testing Algo_bindings parser";
   let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
   let module O = Tests_algo_optimize(Opt) in
   let module P = Parser.Parse(Algo_bindings.Parse_rules(Algo_bindings.Optimize(Algo_bindings.To_string))) in
