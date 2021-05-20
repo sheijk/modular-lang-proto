@@ -376,61 +376,63 @@ module Tests_algo_optimize(L : Algo_bindings.Lang) =
 struct
   type t = L.t
 
-  let bool_tests = L.[
-      Some true, bool true;
-      Some false, bool false;
+  let is_int n = Some (Interpreter.Default_values.int n)
+  let is_bool b = Some (Interpreter.Default_values.bool b)
+  let fails = None
 
-      Some true, bool false || bool true;
-      Some true, bool true || bool false;
-      Some false, bool false || bool false;
-      Some true, bool true && bool true;
-      Some false, bool true && bool false;
+  let tests = L.[
+      is_bool true, bool true;
+      is_bool false, bool false;
 
-      Some true, bool true && (bool true || bool false);
-      Some false, bool true && bool false || bool false && bool true;
+      is_bool true, bool false || bool true;
+      is_bool true, bool true || bool false;
+      is_bool false, bool false || bool false;
+      is_bool true, bool true && bool true;
+      is_bool false, bool true && bool false;
 
-      Some false, int 3 =. int 4;
-      Some false, int 3 >. int 3;
-      Some false, int 4 >. int 10;
-      Some true, int 3 =. int 3;
-      Some true, int 3 >. int (-10);
-      Some true, int 4 <. int 10;
-    ]
+      is_bool true, bool true && (bool true || bool false);
+      is_bool false, bool true && bool false || bool false && bool true;
 
-  let int_tests = L.[
-      Some 1, int 1;
-      Some 5, int 10 /. int 2;
-      Some 10, int 3 +. int 7;
-      Some 15,
+      is_bool false, int 3 =. int 4;
+      is_bool false, int 3 >. int 3;
+      is_bool false, int 4 >. int 10;
+      is_bool true, int 3 =. int 3;
+      is_bool true, int 3 >. int (-10);
+      is_bool true, int 4 <. int 10;
+
+      is_int 1, int 1;
+      is_int 5, int 10 /. int 2;
+      is_int 10, int 3 +. int 7;
+      is_int 15,
       at (file "Tests_algo_optimize.ml") ~line:10 ~column:8 @@
       int 10 +. int 5;
 
-      Some 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+      is_int 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
 
-      Some 3, if_ (int 10 >. int 20) (int 666) (int 3);
-      None, loop (int 0);
-      None, loop (int 1);
-      None, break (int 3);
-      None, loop (break (int 10));
-      None, loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1));
-      Some 2, if_ (bool false) (int 1) (int 2);
-      Some 1, if_ (bool true) (int 1) (int 2);
-      Some 22, if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20);
-      Some 11, if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20);
-      Some 1, if_ (bool true) (int 1) (int 999);
+      is_int 3, if_ (int 10 >. int 20) (int 666) (int 3);
+      fails, loop (int 0);
+      fails, loop (int 1);
+      fails, break (int 3);
+      fails, loop (break (int 10));
+      fails, loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1));
+      is_int 2, if_ (bool false) (int 1) (int 2);
+      is_int 1, if_ (bool true) (int 1) (int 2);
+      is_int 22, if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20);
+      is_int 11, if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20);
+      is_int 1, if_ (bool true) (int 1) (int 999);
 
-      None, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
-      None, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
+      fails, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
+      fails, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
 
-      None, let_ "foo" (int 99) (get "foo");
-      None, let_ "foo" (int 99) (int 1 +. get "foo");
-      None,
+      fails, let_ "foo" (int 99) (get "foo");
+      fails, let_ "foo" (int 99) (int 1 +. get "foo");
+      fails,
       let_ "foo" (int (-1))
         (get "foo" +.
          let_ "foo" (int 24)
            (int 100 +. get "foo"));
 
-      None,
+      fails,
       let_ "sum" (int 0)
         (loop
            (set "sum" (loop_index() *. loop_index() +. get "sum")
@@ -457,8 +459,7 @@ let test_algo_optimized() =
       Tester_stats.fail unoptimized "to infer value" optimized
       (* Printf.printf "  err-opt %s to %s, failed to infer value\n" unoptimized optimized *)
   in
-  List.iter print (combine S.bool_tests O.bool_tests);
-  List.iter print (combine S.int_tests O.int_tests)
+  List.iter print (combine S.tests O.tests)
 
 let test_parser() =
   print_endline "Testing Algo_bindings parser";
@@ -483,7 +484,7 @@ let test_parser() =
       Tester_stats.fail (Strlang.Tree.to_string st) orig_opt "exception"
   in
   let module St = Tests_algo_optimize(Algo_bindings.To_st(Strlang.Tree)) in
-  List.iter check_parser (combine St.int_tests O.int_tests)
+  List.iter check_parser (combine St.tests O.tests)
 
 let () =
   try
