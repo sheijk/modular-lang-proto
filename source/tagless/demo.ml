@@ -517,7 +517,7 @@ let add_test_algo_optimized() =
 let add_test_parser() =
   let module Opt = Algo_bindings.Optimize(Algo_bindings.To_string) in
   let module O = Tests_algo_optimize(Opt) in
-  let module P = Parser.Parse(Algo_bindings.Parse_rules(Algo_bindings.Optimize(Algo_bindings.To_string))) in
+  let module P = Parser.Parse(Algo_bindings.Parse_rules(Opt)) in
   let module St = Tests_algo_optimize(Algo_bindings.To_st(Strlang.Tree)) in
   let module T = Test_runner_parse(St)(O)(P) in
   Tester_stats.add "Algo_bindings parser" (module T)

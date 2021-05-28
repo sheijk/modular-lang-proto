@@ -41,38 +41,6 @@ struct
   end
 end
 
-module Test =
-struct
-  let print_result = function
-    | Ocaml_result.Ok str ->
-      print_endline ("ok " ^ str)
-    | Error errors ->
-      List.map (fun { Result.message; _ } -> "error " ^ message) errors
-        |> String.concat ", "
-        |> print_endline
-
-  let () =
-    let open Result.Syntax in
-
-    print_result
-      (let* x = Result.ok "foo" in
-       Result.ok x);
-
-    print_result
-      (let* x = Result.ok "foo"
-       and* y = Result.ok "bar" in
-       Result.ok @@ x ^ y);
-
-    print_result
-      (let+ x = Result.error_no_loc "oh no" in
-       x);
-
-  print_result
-      (let+ x = Result.error_no_loc "oh no"
-       and+ y = Result.error_no_loc "not again" in
-       x ^ y)
-end
-
 module Info =
 struct
   type t = {
