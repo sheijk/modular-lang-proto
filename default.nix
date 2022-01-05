@@ -2,7 +2,7 @@
   nixpkgs ? (builtins.fetchGit {
     name = "nixos-stable-21.11";
     url = "https://github.com/nixos/nixpkgs";
-    ref = "refs/tags/21.11";
+    ref = "nixos-21.11";
   })
 }:
 
