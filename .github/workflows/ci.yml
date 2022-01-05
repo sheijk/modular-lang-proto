@@ -26,7 +26,7 @@ jobs:
       - name: Pin package
         run: opam pin add modular-lang-proto.dev . --no-action
       - name: Install system dependencies
-        run: opam depext modular-lang-proto --yes --with-doc --with-test
+        run: opam depext modular-lang-proto --yes
       - name: Install dependencies
         run: opam install . --deps-only
       - name: Build
