@@ -1,9 +1,8 @@
 {
   nixpkgs ? (builtins.fetchGit {
-    name = "nixos-unstable-2021-04-21";
-    url = "https://github.com/nixos/nixpkgs/";
-    # ref = "refs/heads/nixos-unstable";
-    rev = "0a5f5bab0e08e968ef25cff393312aa51a3512cf";
+    name = "nixos-stable-21.11";
+    url = "https://github.com/nixos/nixpkgs";
+    ref = "refs/tags/21.11";
   })
 }:
 
