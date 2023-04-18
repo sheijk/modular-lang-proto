@@ -37,5 +37,20 @@
             ];
           };
         };
+
+        apps.calc-demo = {
+          type = "app";
+          program = "${self.packages."${system}".modular-lang-proto}/bin/calc-demo";
+        };
+
+        apps.algo-demo = {
+          type = "app";
+          program = "${self.packages."${system}".modular-lang-proto}/bin/algo-demo";
+        };
+
+        apps.tagless-demo = {
+          type = "app";
+          program = "${self.packages."${system}".modular-lang-proto}/bin/tagless-demo";
+        };
       });
 }
