@@ -25,7 +25,8 @@
             version = "0.1";
 
             minimumOCamlVersion = "4.10";
-            useDune2 = true;
+            duneVersion = "3";
+            meta.mainProgram = "tagless-demo";
 
             src = ./.;
 
@@ -34,6 +35,25 @@
               ppxlib
               merlin
               ocp-indent
+            ];
+          };
+        };
+
+        devShells = {
+          default = legacyPackages.mkShell {
+            packages = [
+              legacyPackages.nixpkgs-fmt
+              legacyPackages.ocamlformat
+              legacyPackages.fswatch
+              ocamlPackages.odoc
+              ocamlPackages.ocaml-lsp
+              ocamlPackages.ocamlformat-rpc-lib
+              ocamlPackages.utop
+            ];
+
+            # Tools from packages
+            inputsFrom = [
+              self.packages.${system}.modular-lang-proto
             ];
           };
         };
