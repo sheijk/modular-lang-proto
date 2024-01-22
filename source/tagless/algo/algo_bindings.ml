@@ -12,6 +12,8 @@ struct
   type t = L.t
   type value = Interpreter.Default_values.value
   module I = Interpreter.Dynamic
+  type interpreter = I.t
+  type expected = value option
 
   let is_int n = Some (I.int n)
   let is_bool b = Some (I.bool b)
@@ -41,6 +43,8 @@ module Tests_compiler_errors(L : Lang) =
 struct
   type t = L.t
   type value = Interpreter.Default_values.value
+  type expected = value option
+  type interpreter = unit
 
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
@@ -59,6 +63,8 @@ module Tests_optimize(L : Lang) =
 struct
   type t = L.t
   type value = Interpreter.Default_values.value
+  type expected = value option
+  type interpreter = unit
 
   let is_int n = Some (Interpreter.Default_values.int n)
   let is_bool b = Some (Interpreter.Default_values.bool b)
@@ -136,6 +142,9 @@ struct
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Algo.Lang = To_string in ()
+let () = let module T : Empty.Test_cases_eval = Tests(To_string) in ()
+let () = let module T : Empty.Test_cases = Tests_optimize(To_string) in ()
+let () = let module T : Empty.Test_cases = Tests_compiler_errors(To_string) in ()
 
 module Eval(I : Interpreter.All) =
 struct
@@ -147,7 +156,7 @@ struct
 end
 let () = let module T : Algo.Lang = Eval(Interpreter.Dynamic) in ()
 
-module Eval_compiled =
+module Eval_compiled : Lang with type t = Empty.Eval_compiled.t =
 struct
   include Empty.Eval_compiled
   include Calc.Eval_compiled

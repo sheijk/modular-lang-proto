@@ -10,6 +10,8 @@ struct
   type t = L.t
   type value = Interpreter.Default_values.value
   module I = Interpreter.Dynamic
+  type interpreter = I.t
+  type expected = value option
 
   let is_bool b = Some (I.bool b)
 
@@ -33,6 +35,7 @@ struct
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
+let () = let module T : Empty.Test_cases_eval = Tests(To_string) in ()
 
 module Eval(I : Interpreter.Loop) = struct
   include Empty.Eval(I)

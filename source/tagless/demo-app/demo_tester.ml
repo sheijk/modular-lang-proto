@@ -1,12 +1,7 @@
-module type Test_cases =
+module type Test_suite =
 sig
   type t
   val tests : t list
-end
-
-module type Test_suite =
-sig
-  include Test_cases
   val run : t -> unit
 end
 
@@ -80,12 +75,4 @@ end = struct
 end
 
 type dyn_value = Interpreter.Default_values.value
-
-module type Test_names =
-sig
-  type t = string
-  type value = dyn_value
-
-  val tests : (value option * string) list
-end
 

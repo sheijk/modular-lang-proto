@@ -12,8 +12,10 @@ end
 module Tests(L : Lang) =
 struct
   type t = L.t
-  module I = Interpreter.No_runtime
-  type value = Interpreter.Default_values.value
+  module I = Interpreter.Dynamic
+  type value = I.value
+  type expected = value option
+  type interpreter = I.t
 
   let is_int n = Some (I.int n)
   let is_bool b = Some (I.bool b)
@@ -60,6 +62,7 @@ struct
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
+let () = let module T : Empty.Test_cases_eval = Tests(To_string) in ()
 
 module Eval(I : Interpreter.Values) =
 struct

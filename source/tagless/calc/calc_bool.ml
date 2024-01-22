@@ -6,11 +6,12 @@ sig
   val ( || ) : t -> t -> t
 end
 
-module Tests(L : Lang) =
+module Tests(L : Lang)(I : Interpreter.Values) =
 struct
   type t = L.t
-  module I = Interpreter.No_runtime
-  type value = Interpreter.Default_values.value
+  type value = I.value
+  type expected = value option
+  type interpreter = I.t
 
   let is_bool b = Some (I.bool b)
 
@@ -44,6 +45,7 @@ struct
 end
 module To_string = To_st(Strlang.To_string)
 let () = let module T : Lang = To_string in ()
+let () = let module T : Empty.Test_cases_eval = Tests(To_string)(Interpreter.No_runtime) in ()
 
 module Eval(I : Interpreter.Values) =
 struct
@@ -79,10 +81,10 @@ module Eval_compiled =
 struct
   include Empty.Eval_compiled
 
-  let bool (b : bool) =
+  let bool (b : bool) : t =
     Compiler.Info.make(), fun _ctx ->
       Compiler.Result.ok @@
-      fun _rt -> I.bool b
+      fun _rt -> Interpreter.Default_values.bool b
 
   let ( && ) lhs rhs = apply ( && ) lhs rhs
   let ( || ) lhs rhs = apply ( || ) lhs rhs

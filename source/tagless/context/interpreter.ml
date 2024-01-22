@@ -115,7 +115,7 @@ sig
 end
 
 module No_runtime : sig
-  include Create with type value = Default_values.value
+  include Create with type value = Default_values.value and type t = unit
 end = struct
   type t = unit
   let make () = ()

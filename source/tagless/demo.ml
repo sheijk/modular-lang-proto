@@ -5,15 +5,28 @@ let add_test_int() =
   let module T : Test_suite =
     Demo_runner.Eval
       (Calc_int.Tests(Calc_int.To_string))
-      (Calc_int.Tests(Calc_int.Eval(Interpreter.No_runtime)))
+      (Calc_int.Tests(Calc_int.Eval(Interpreter.Dynamic)))
+      (Interpreter.Dynamic)
   in
   Tester_state.add "Calc_int" (module T)
 
+module Eval2
+    (I : Interpreter.Create)
+    (Tests : functor (L : Calc_bool.Lang) (I : Interpreter.Create) -> Demo_runner.Test_cases
+     with type t = L.t
+      and type interpreter = I.t
+      and type value = I.value
+      and type expected = I.value option)
+= struct
+  include Demo_runner.Eval
+      (Tests(Calc_bool.To_string) (I))
+      (Tests(Calc_bool.Eval(I)) (I))
+      (I)
+end
+
 let add_test_bool () =
   let module T =
-    Demo_runner.Eval
-      (Calc_bool.Tests(Calc_bool.To_string))
-      (Calc_bool.Tests(Calc_bool.Eval(Interpreter.No_runtime)))
+    Eval2 (Interpreter.No_runtime) (Calc_bool.Tests)
   in
   Tester_state.add "Calc_bool" (module T)
 
@@ -21,7 +34,8 @@ let add_test_calc() =
   let module T =
     Demo_runner.Eval
       (Calc.Tests(Calc.To_string))
-      (Calc.Tests(Calc.Eval(Interpreter.No_runtime)))
+      (Calc.Tests(Calc.Eval(Interpreter.Dynamic)))
+      (Interpreter.Dynamic)
   in
   Tester_state.add "Calc" (module T)
 
@@ -30,6 +44,7 @@ let add_test_algo() =
     Demo_runner.Eval
       (Algo_calc.Tests(Algo_calc.To_string))
       (Algo_calc.Tests(Algo_calc.Eval(Interpreter.Dynamic)))
+      (Interpreter.Dynamic)
   in
   Tester_state.add "Algo_calc" (module T)
 
@@ -38,6 +53,7 @@ let add_test_algo_bool() =
     Demo_runner.Eval
       (Algo_bool.Tests(Algo_bool.To_string))
       (Algo_bool.Tests(Algo_bool.Eval(Interpreter.Dynamic)))
+      (Interpreter.Dynamic)
   in
   Tester_state.add "Algo_bool" (module T)
 
@@ -46,6 +62,7 @@ let add_test_algo_bindings () =
     Demo_runner.Eval
       (Algo_bindings.Tests(Algo_bindings.To_string))
       (Algo_bindings.Tests(Algo_bindings.Eval(Interpreter.Dynamic)))
+      (Interpreter.Dynamic)
   in
   Tester_state.add "Algo_bindings" (module T)
 

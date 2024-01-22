@@ -4,6 +4,22 @@ sig
   type t
 end
 
+module type Test_cases =
+sig
+  type t
+  type expected
+  type value
+  type interpreter
+  val tests : (expected * t) list
+end
+
+(* Used to check Tests modules in languages. See also Test_tester.Eval_cases *)
+module type Test_cases_eval =
+sig
+  include Test_cases
+  type interpreter
+end
+
 module To_st(L : Strlang.Lang) =
 struct
   type t = L.t
@@ -24,8 +40,8 @@ let () = let module T : Lang = Eval(Interpreter.No_runtime) in ()
 
 module Eval_compiled =
 struct
-  module I = Interpreter.No_runtime
-  type t = Compiler.Info.t * (Compiler.Context.t -> (I.t -> I.value) Compiler.Result.t)
+  type value = Interpreter.Default_values.value
+  type t = Compiler.Info.t * (Compiler.Context.t -> (unit -> value) Compiler.Result.t)
 end
 let () = let module T : Lang = Eval_compiled in ()
 
