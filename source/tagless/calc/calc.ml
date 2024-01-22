@@ -9,6 +9,46 @@ sig
   val ( >. ) : t -> t -> t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  module I = Interpreter.No_runtime
+  type value = Interpreter.Default_values.value
+
+  let is_int n = Some (I.int n)
+  let is_bool b = Some (I.bool b)
+
+  let tests =
+    let module Ci = Calc_int.Tests(L) in
+    Ci.tests @ L.[
+        is_int 1, int 1;
+        is_int 15, int 10 +. int 5;
+        is_int 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+        (* Some 5, int 10 / int 2; *)
+
+        is_bool true, bool true;
+        is_bool true, int 4 <. int 10;
+        is_bool false, int 4 >. int 10;
+        is_bool true, int 3 =. int 3;
+        is_bool false, int 3 =. int 4;
+        is_bool true, int 3 >. int (-10);
+        is_bool false, int 3 >. int 3;
+
+        is_bool true, bool true || bool false;
+        is_bool false, bool false || bool false;
+        is_bool false, bool true && bool false;
+      ]
+
+  (* Float tests from ast/Calc *)
+  (*   run (i 8) Build.(to_i (f 8.)); *)
+  (*   run (i 74) Build.(to_i (f 64.) + i 10); *)
+  (*   run (f 8.) Build.(f 13. - f 5.); *)
+  (*   run (f 10.) Build.(to_f @@ i 8 + i 2); *)
+  (*   run (f 10.) Build.(f 8. + to_f (i 2)); *)
+  (*   run (f 24.) Build.(to_f (i 16) + f 8.); *)
+  (*   run (f 8.) Build.(f 3. + i 5); *)
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Calc_int.To_st(S)

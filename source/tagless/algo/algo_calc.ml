@@ -6,6 +6,36 @@ sig
   include Locations.Lang with type t := t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  module I = Interpreter.Dynamic
+  type value = Interpreter.Default_values.value
+
+  let is_int n = Some (I.int n)
+  let is_bool b = Some (I.bool b)
+
+  let tests =
+    let module C = Calc.Tests(L) in
+    C.tests @ L.[
+        is_int 10, int 3 +. int 7;
+        is_int 5, int 10 /. int 2;
+        is_int 3, if_ (int 10 >. int 20) (int 666) (int 3);
+        None, (loop (int 0));
+        None, (break (int 3));
+        is_int 10, (loop (break (int 10)));
+        is_int 11, (loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1)));
+        None, loop (int 1);
+        is_int 2, (if_ (bool false) (int 1) (int 2));
+        is_int 1, (if_ (bool true) (int 1) (int 2));
+        is_int 22, (if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20));
+        is_int 11, (if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20));
+        is_int 1, (if_ (bool true) (int 1) (int 999));
+
+        is_bool true, bool true;
+      ]
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Empty.To_st(S)

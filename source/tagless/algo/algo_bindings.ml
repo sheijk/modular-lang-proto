@@ -7,6 +7,125 @@ sig
   include Locations.Lang with type t := t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  type value = Interpreter.Default_values.value
+  module I = Interpreter.Dynamic
+
+  let is_int n = Some (I.int n)
+  let is_bool b = Some (I.bool b)
+
+  let tests =
+    let module C = Algo_calc.Tests(L) in
+    C.tests @ L.[
+        is_int 99, let_ "foo" (int 99) (get "foo");
+        is_int 123,
+        let_ "foo" (int (-1))
+          (get "foo" +.
+           let_ "foo" (int 24)
+             (int 100 +. get "foo"));
+
+        is_int 14,
+        at (file "Algo_bindings.Tests.ml") ~line:10 ~column:8 @@
+        let_ "sum" (int 0)
+          (loop
+             (set "sum" (loop_index() *. loop_index() +. get "sum")
+                (if_ (get "sum" >. int 10)
+                   (break (get "sum"))
+                   (int 1))))
+      ]
+end
+
+module Tests_compiler_errors(L : Lang) =
+struct
+  type t = L.t
+  type value = Interpreter.Default_values.value
+
+  let is_int n = Some (Interpreter.Default_values.int n)
+  let is_bool b = Some (Interpreter.Default_values.bool b)
+
+  let tests =
+    let module B = Tests(L) in
+    B.tests @ L.[
+        None, if_ (bool false) (loop_index()) (int 0);
+        None,
+        let_ "x" (int 10)
+          (get "x" +. get "y")
+      ]
+end
+
+module Tests_optimize(L : Lang) =
+struct
+  type t = L.t
+  type value = Interpreter.Default_values.value
+
+  let is_int n = Some (Interpreter.Default_values.int n)
+  let is_bool b = Some (Interpreter.Default_values.bool b)
+  let fails = None
+
+  let tests = L.[
+      is_bool true, bool true;
+      is_bool false, bool false;
+
+      is_bool true, bool false || bool true;
+      is_bool true, bool true || bool false;
+      is_bool false, bool false || bool false;
+      is_bool true, bool true && bool true;
+      is_bool false, bool true && bool false;
+
+      is_bool true, bool true && (bool true || bool false);
+      is_bool false, bool true && bool false || bool false && bool true;
+
+      is_bool false, int 3 =. int 4;
+      is_bool false, int 3 >. int 3;
+      is_bool false, int 4 >. int 10;
+      is_bool true, int 3 =. int 3;
+      is_bool true, int 3 >. int (-10);
+      is_bool true, int 4 <. int 10;
+
+      is_int 1, int 1;
+      is_int 5, int 10 /. int 2;
+      is_int 10, int 3 +. int 7;
+      is_int 15,
+      at (file "Tests_algo_optimize.ml") ~line:10 ~column:8 @@
+      int 10 +. int 5;
+
+      is_int 123, (int 1 *. int 10 +. int 2) *. int 10 +. int 3;
+
+      is_int 3, if_ (int 10 >. int 20) (int 666) (int 3);
+      fails, loop (int 0);
+      fails, loop (int 1);
+      fails, break (int 3);
+      fails, loop (break (int 10));
+      fails, loop (if_ (loop_index() >. int 10) (break @@ loop_index()) (int 1));
+      is_int 2, if_ (bool false) (int 1) (int 2);
+      is_int 1, if_ (bool true) (int 1) (int 2);
+      is_int 22, if_ (int 1 -. int 1 >. int 1) (int 1 +. int 10) (int 2 +. int 20);
+      is_int 11, if_ (int 2 -. int 1 <. int 2) (int 1 +. int 10) (int 2 +. int 20);
+      is_int 1, if_ (bool true) (int 1) (int 999);
+
+      fails, if_ (int 0 >. (loop (break @@ int 1))) (int 5) (int 3 +. int 2);
+      fails, if_ (int 0 >. (loop @@ int 0)) (int 1) (int 1);
+
+      fails, let_ "foo" (int 99) (get "foo");
+      fails, let_ "foo" (int 99) (int 1 +. get "foo");
+      fails,
+      let_ "foo" (int (-1))
+        (get "foo" +.
+         let_ "foo" (int 24)
+           (int 100 +. get "foo"));
+
+      fails,
+      let_ "sum" (int 0)
+        (loop
+           (set "sum" (loop_index() *. loop_index() +. get "sum")
+              (if_ (get "sum" >. int 10)
+                 (break (get "sum"))
+                 (int 1))))
+    ]
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Empty.To_st(S)

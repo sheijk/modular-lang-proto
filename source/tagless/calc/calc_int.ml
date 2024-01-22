@@ -8,6 +8,22 @@ sig
   val ( /. ) : t -> t -> t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  type value = Interpreter.Default_values.value
+  module I = Interpreter.No_runtime
+
+  let is_int n = Some (I.int n)
+
+  let tests = L.[
+      is_int 3, int 1 +. int 2;
+      is_int 1, int 1;
+      is_int 99, int 99;
+      is_int 106, int 100 +. int 3 *. int 2;
+    ]
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Empty.To_st(S)

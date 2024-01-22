@@ -5,6 +5,25 @@ module type Lang = sig
   include Locations.Lang with type t := t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  type value = Interpreter.Default_values.value
+  module I = Interpreter.Dynamic
+
+  let is_bool b = Some (I.bool b)
+
+  let tests = L.[
+      is_bool true, bool true;
+      is_bool true, bool true || bool false;
+      is_bool false, bool false || bool false;
+
+      is_bool false,
+      at (file "Algo_bool.Tests.ml") ~line:10 ~column:8 @@
+      bool true && bool false;
+    ]
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Empty.To_st(S)

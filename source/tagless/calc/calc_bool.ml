@@ -6,6 +6,27 @@ sig
   val ( || ) : t -> t -> t
 end
 
+module Tests(L : Lang) =
+struct
+  type t = L.t
+  module I = Interpreter.No_runtime
+  type value = Interpreter.Default_values.value
+
+  let is_bool b = Some (I.bool b)
+
+  let tests = L.[
+      is_bool true, bool true;
+      is_bool false, bool false;
+      is_bool true, (bool true && bool true);
+      is_bool false, (bool true && bool false);
+      is_bool true, (bool true || bool false);
+      is_bool true, (bool false || bool true);
+      is_bool false, (bool false || bool false);
+      is_bool true, (bool true && (bool true || bool false));
+      is_bool false, (bool true && bool false || bool false && bool true);
+    ]
+end
+
 module To_st(S : Strlang.Lang) =
 struct
   include Empty.To_st(S)
