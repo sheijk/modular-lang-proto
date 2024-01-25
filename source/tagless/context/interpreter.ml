@@ -56,6 +56,56 @@ sig
   val set : t -> string -> value -> unit
 end
 
+module type Hoas_variables =
+sig
+  include Empty
+
+  type 'a variable = {
+    get : unit -> 'a;
+    set : 'a -> unit;
+  }
+
+  val letin : string -> 'a -> ('a variable -> value) -> value
+  val print : value -> unit
+  val int : int -> value
+  val to_int : value -> int
+end
+
+module Hoas : Hoas_variables =
+struct
+  type value = int
+  type t = unit
+
+  type 'a variable = {
+    get : unit -> 'a;
+    set : 'a -> unit;
+  }
+
+  let letin (_name :string) value body : value =
+    let cell = ref value in
+    let var = {
+      get = (fun () -> !cell);
+      set = (fun v -> cell := v);
+    } in
+    body var
+
+  let int i = i
+  let to_int i = i
+  let print i = Printf.printf "value = %d\n" i
+end
+
+module Test =
+struct
+  let prog =
+    Hoas.(
+      print @@
+      letin "x" 10
+        (fun x ->
+           print (int (x.get()));
+           x.set 100;
+           int @@ x.get()))
+end
+
 module type Loop =
 sig
   include Values
