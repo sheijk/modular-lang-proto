@@ -120,17 +120,26 @@ module Hoas =
 struct
   include Hoas_var
   include Hoas_lp
+
+  let incr var = set var (get var + 1)
+
+  let for_ init supremum body =
+    ignore (letin "idx" init @@ fun idx ->
+            while_ (fun () -> supremum - get idx) (fun loop ->
+                body idx loop;
+                incr idx);
+            int 0);
+    ()
 end
 
 module Test =
 struct
   let run value =
-    Printf.printf "Program exited with %d\n" value
+    Printf.printf "Program exited with %d\n" (Hoas.to_int value)
 
   let prog1 =
     run @@
     Hoas.(
-      to_int @@
       letin "x" 10 @@ fun x ->
       print x;
       set x 100;
@@ -138,14 +147,21 @@ struct
       int @@ get x)
 
   let prog2 =
-    run
-      Hoas.(
-        to_int @@
-        letin "idx" 5 @@ fun idx ->
-        while_ (fun () -> get idx) (fun _loop ->
-            set idx (get idx - 1);
-            print idx;);
-        int @@ get idx)
+    run @@
+    Hoas.(
+      letin "idx" 5 @@ fun idx ->
+      while_ (fun () -> get idx) (fun _loop ->
+          set idx (get idx - 1);
+          print idx;);
+      int @@ get idx)
+
+  let prog3 =
+    run @@
+    Hoas.(
+      for_ 10 20 (fun idx _loop ->
+          print idx;
+        );
+      int 0)
 end
 
 module type Loop =
