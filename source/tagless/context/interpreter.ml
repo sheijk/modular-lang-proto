@@ -71,7 +71,7 @@ sig
   val to_int : value -> int
 end
 
-module Hoas : Hoas_variables =
+module Hoas_var : Hoas_variables =
 struct
   type value = int
   type t = unit
@@ -96,18 +96,56 @@ struct
   let print v = Printf.printf "%s = %d\n" v.name (get v)
 end
 
+module type Hoas_loop =
+sig
+  include Empty
+  type loop
+
+  val while_ : (unit -> int) -> (loop -> unit) -> unit
+end
+
+module Hoas_lp : Hoas_loop =
+struct
+  type value = int
+  type t = unit
+  type loop = unit
+
+  let while_ condition (body : loop -> unit) =
+    while (condition() > 0) do
+      body ()
+    done
+end
+
+module Hoas =
+struct
+  include Hoas_var
+  include Hoas_lp
+end
+
 module Test =
 struct
-  let prog =
-    Printf.printf "Program exited with %d\n" @@
+  let run value =
+    Printf.printf "Program exited with %d\n" value
+
+  let prog1 =
+    run @@
     Hoas.(
       to_int @@
-      letin "x" 10
-        (fun x ->
-           print x;
-           set x 100;
-           print x;
-           int @@ get x))
+      letin "x" 10 @@ fun x ->
+      print x;
+      set x 100;
+      print x;
+      int @@ get x)
+
+  let prog2 =
+    run
+      Hoas.(
+        to_int @@
+        letin "idx" 5 @@ fun idx ->
+        while_ (fun () -> get idx) (fun _loop ->
+            set idx (get idx - 1);
+            print idx;);
+        int @@ get idx)
 end
 
 module type Loop =
